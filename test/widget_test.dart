@@ -5,7 +5,8 @@ void main() {
   testWidgets('home page shows family entry point', (tester) async {
     await tester.pumpWidget(const KhaneBehdashtApp());
 
-    await tester.pump();
+    // اجازه می‌دهیم Future مربوط به بارگذاری اعضای خانواده کامل شود.
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('خانه بهداشت پزشک خانواده'), findsOneWidget);
     expect(find.text('اعضای خانواده'), findsOneWidget);
