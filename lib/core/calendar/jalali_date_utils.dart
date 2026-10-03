@@ -5,77 +5,46 @@ import 'jalali_birth_date.dart';
 class JalaliDateUtils {
   const JalaliDateUtils._();
 
-  static Jalali today() => Jalali.fromDateTime(DateTime.now());
+  /// تاریخ شمسی امروز
+  static Jalali today() {
+    return Jalali.now();
+  }
 
+  /// اضافه کردن تعداد روز مشخص به تاریخ شمسی
+  ///
+  /// از موتور داخلی shamsi_date استفاده می‌شود تا
+  /// محاسبات ماه‌ها، سال‌ها و سال کبیسه کاملاً شمسی باشند.
   static Jalali addDays(Jalali date, int days) {
-    if (days == 0) {
-      return date;
-    }
-
-    var year = date.year;
-    var month = date.month;
-    var day = date.day;
-
-    if (days > 0) {
-      for (var i = 0; i < days; i++) {
-        final monthLength = Jalali(year, month, 1).monthLength;
-
-        if (day < monthLength) {
-          day++;
-        } else {
-          day = 1;
-
-          if (month < 12) {
-            month++;
-          } else {
-            month = 1;
-            year++;
-          }
-        }
-      }
-    } else {
-      for (var i = 0; i < -days; i++) {
-        if (day > 1) {
-          day--;
-        } else {
-          if (month > 1) {
-            month--;
-          } else {
-            month = 12;
-            year--;
-          }
-
-          day = Jalali(year, month, 1).monthLength;
-        }
-      }
-    }
-
-    return Jalali(year, month, day);
+    return date.addDays(days);
   }
 
+  /// اضافه کردن تعداد هفته مشخص به تاریخ شمسی
   static Jalali addWeeks(Jalali date, int weeks) {
-    return addDays(date, weeks * 7);
+    return date.addDays(weeks * 7);
   }
 
+  /// اضافه کردن ماه به تاریخ شمسی
+  ///
+  /// مثال:
+  /// 1405/06/15 + 1 ماه = 1405/07/15
   static Jalali addMonths(Jalali date, int months) {
-    final total = date.year * 12 + (date.month - 1) + months;
-    final year = total ~/ 12;
-    final month = total % 12 + 1;
-
-    final monthLength = Jalali(year, month, 1).monthLength;
-    final day = date.day > monthLength ? monthLength : date.day;
-
-    return Jalali(year, month, day);
+    return date.addMonths(months);
   }
 
+  /// اضافه کردن سال به تاریخ شمسی
   static Jalali addYears(Jalali date, int years) {
-    return addMonths(date, years * 12);
+    return date.addYears(years);
   }
 
+  /// تبدیل Jalali به مدل تاریخ تولد برنامه
   static JalaliBirthDate birthDateFrom(Jalali date) {
     return JalaliBirthDate.fromJalali(date);
   }
 
+  /// قالب استاندارد تاریخ برای نمایش در برنامه
+  ///
+  /// خروجی:
+  /// 1405/07/13
   static String format(Jalali date) {
     return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
   }
