@@ -19,7 +19,7 @@ jobs:
     steps:
 
       # ==========================================
-      # 1. Checkout
+      # 1. دریافت Repository
       # ==========================================
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -45,7 +45,7 @@ jobs:
 
 
       # ==========================================
-      # 4. Python dependencies
+      # 4. ابزار Python
       # ==========================================
       - name: Install Python dependencies
         run: |
@@ -64,73 +64,124 @@ jobs:
 
 
       # ==========================================
-      # 6. Flutter information
+      # 6. بررسی پروژه
       # ==========================================
-      - name: Check Flutter
+      - name: Inspect project
         run: |
-          flutter --version
-          dart --version
-          flutter doctor -v
-
-
-      # ==========================================
-      # 7. Verify project files
-      # ==========================================
-      - name: Check project
-        run: |
-          echo "===== PROJECT ====="
+          echo "===== ROOT ====="
           ls -la
 
-          echo "===== LIB ====="
-          ls -la lib || true
-
           echo "===== PUBSPEC ====="
-          test -f pubspec.yaml && echo "pubspec.yaml found"
-
-          echo "===== ANDROID ====="
-          ls -la android || true
+          if [ -f pubspec.yaml ]; then
+            echo "pubspec.yaml found"
+            cat pubspec.yaml
+          else
+            echo "ERROR: pubspec.yaml not found"
+            exit 1
+          fi
 
 
       # ==========================================
-      # 8. Create Android platform if necessary
+      # 7. اصلاح نام پروژه Dart
+      # ==========================================
+      - name: Fix Dart package name
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("pubspec.yaml")
+
+          text = path.read_text(encoding="utf-8")
+
+          lines = text.splitlines()
+
+          found = False
+
+          for i, line in enumerate(lines):
+              if line.startswith("name:"):
+                  lines[i] = "name: khane_behdasht"
+                  found = True
+                  break
+
+          if not found:
+              raise SystemExit("ERROR: name field not found in pubspec.yaml")
+
+          path.write_text(
+              "\n".join(lines) + "\n",
+              encoding="utf-8"
+          )
+
+          print("Updated pubspec.yaml:")
+          print(path.read_text(encoding="utf-8"))
+          PY
+
+
+      # ==========================================
+      # 8. ایجاد Android
       # ==========================================
       - name: Prepare Android platform
         run: |
           if [ ! -d "android" ]; then
+
             echo "Android folder does not exist."
             echo "Creating Android platform..."
-            flutter create . --platforms=android --org ir.khane.behdasht
+
+            flutter create . \
+              --project-name khane_behdasht \
+              --org ir.khane.behdasht \
+              --platforms android
+
           else
+
             echo "Android folder already exists."
+
           fi
 
 
       # ==========================================
-      # 9. Configure Android
+      # 9. بررسی Android
+      # ==========================================
+      - name: Check Android project
+        run: |
+          echo "===== ANDROID ====="
+          ls -la android
+
+          echo "===== GRADLE ====="
+          find android -maxdepth 3 -type f \
+            \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "gradle-wrapper.properties" \) \
+            -print
+
+
+      # ==========================================
+      # 10. تنظیم Android اختصاصی پروژه
       # ==========================================
       - name: Configure Android
         run: |
           if [ -f "tool/prepare_android.py" ]; then
+            echo "Running prepare_android.py"
             python3 tool/prepare_android.py
           else
-            echo "prepare_android.py not found - skipping."
+            echo "prepare_android.py not found."
+            echo "Skipping custom Android configuration."
           fi
 
 
       # ==========================================
-      # 10. Create application icon
+      # 11. ساخت آیکون
       # ==========================================
       - name: Generate application icon
         run: |
           if [ -f "tool/create_icon.py" ]; then
+            echo "Running create_icon.py"
             python3 tool/create_icon.py
           else
-            echo "create_icon.py not found - skipping."
+            echo "create_icon.py not found."
+            echo "Skipping custom icon generation."
           fi
 
 
       # ==========================================
-      # 11. Flutter dependencies
+      # 12. Flutter dependencies
       # ==========================================
       - name: Flutter pub get
         run: |
@@ -138,7 +189,7 @@ jobs:
 
 
       # ==========================================
-      # 12. Analyze
+      # 13. Analyze
       # ==========================================
       - name: Flutter analyze
         run: |
@@ -146,7 +197,7 @@ jobs:
 
 
       # ==========================================
-      # 13. Tests
+      # 14. Tests
       # ==========================================
       - name: Flutter tests
         run: |
@@ -154,7 +205,7 @@ jobs:
 
 
       # ==========================================
-      # 14. Build APK
+      # 15. ساخت APK
       # ==========================================
       - name: Build Release APK
         run: |
@@ -162,7 +213,7 @@ jobs:
 
 
       # ==========================================
-      # 15. Build AAB
+      # 16. ساخت AAB
       # ==========================================
       - name: Build Release AAB
         run: |
@@ -170,25 +221,25 @@ jobs:
 
 
       # ==========================================
-      # 16. Check outputs
+      # 17. بررسی خروجی
       # ==========================================
       - name: Check build outputs
         run: |
           echo "================================"
-          echo "APK OUTPUT"
+          echo "APK"
           echo "================================"
 
           ls -lh build/app/outputs/flutter-apk/
 
           echo "================================"
-          echo "AAB OUTPUT"
+          echo "AAB"
           echo "================================"
 
           ls -lh build/app/outputs/bundle/release/
 
 
       # ==========================================
-      # 17. Upload APK and AAB
+      # 18. ذخیره APK و AAB
       # ==========================================
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
