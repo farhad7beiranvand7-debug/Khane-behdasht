@@ -8,21 +8,48 @@ class JalaliDateUtils {
   static Jalali today() => Jalali.fromDateTime(DateTime.now());
 
   static Jalali addDays(Jalali date, int days) {
-    var result = date;
-    if (days >= 0) {
-      for (var i = 0; i < days; i++) {
-        result = _nextDay(result);
+    if (days == 0) return date;
+
+    var year = date.year;
+    var month = date.month;
+    var day = date.day;
+    var remaining = days.abs();
+    final forward = days > 0;
+
+    while (remaining > 0) {
+      if (forward) {
+        if (day < Jalali(year, month, 1).monthLength) {
+          day++;
+        } else if (month < 12) {
+          month++;
+          day = 1;
+        } else {
+          year++;
+          month = 1;
+          day = 1;
+        }
+      } else {
+        if (day > 1) {
+          day--;
+        } else if (month > 1) {
+          month--;
+          day = Jalali(year, month, 1).monthLength;
+        } else {
+          year--;
+          month = 12;
+          day = Jalali(year, month, 1).monthLength;
+        }
       }
-    } else {
-      for (var i = 0; i < -days; i++) {
-        result = _previousDay(result);
-      }
+
+      remaining--;
     }
-    return result;
+
+    return Jalali(year, month, day);
   }
 
-  static Jalali addWeeks(Jalali date, int weeks) =>
-      addDays(date, weeks * 7);
+  static Jalali addWeeks(Jalali date, int weeks) {
+    return addDays(date, weeks * 7);
+  }
 
   static Jalali addMonths(Jalali date, int months) {
     final total = date.year * 12 + (date.month - 1) + months;
@@ -35,47 +62,15 @@ class JalaliDateUtils {
     return Jalali(year, month, day);
   }
 
-  static Jalali addYears(Jalali date, int years) =>
-      addMonths(date, years * 12);
-
-  static JalaliBirthDate birthDateFrom(Jalali date) =>
-      JalaliBirthDate.fromJalali(date);
-
-  static String format(Jalali date) =>
-      '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
-
-  static Jalali _nextDay(Jalali date) {
-    if (date.day < date.monthLength) {
-      return Jalali(date.year, date.month, date.day + 1);
-    }
-
-    if (date.month < 12) {
-      return Jalali(date.year, date.month + 1, 1);
-    }
-
-    return Jalali(date.year + 1, 1, 1);
+  static Jalali addYears(Jalali date, int years) {
+    return addMonths(date, years * 12);
   }
 
-  static Jalali _previousDay(Jalali date) {
-    if (date.day > 1) {
-      return Jalali(date.year, date.month, date.day - 1);
-    }
+  static JalaliBirthDate birthDateFrom(Jalali date) {
+    return JalaliBirthDate.fromJalali(date);
+  }
 
-    if (date.month > 1) {
-      final previousMonth = Jalali(date.year, date.month - 1, 1);
-      return Jalali(
-        date.year,
-        date.month - 1,
-        previousMonth.monthLength,
-      );
-    }
-
-    final previousYearMonth = Jalali(date.year - 1, 12, 1);
-
-    return Jalali(
-      date.year - 1,
-      12,
-      previousYearMonth.monthLength,
-    );
+  static String format(Jalali date) {
+    return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
   }
 }
