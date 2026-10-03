@@ -74,9 +74,11 @@ jobs:
           if not found:
               raise SystemExit("ERROR: name field not found in pubspec.yaml")
 
-          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          path.write_text(
+              "\n".join(lines) + "\n",
+              encoding="utf-8",
+          )
 
-          print("Updated pubspec.yaml:")
           print(path.read_text(encoding="utf-8"))
           PY
 
@@ -94,13 +96,21 @@ jobs:
             echo "Android folder already exists."
           fi
 
-      - name: Check Android project
+      - name: Inspect Android Gradle files
         run: |
-          echo "===== ANDROID ====="
+          echo "===== ANDROID ROOT ====="
           ls -la android
 
-          echo "===== GRADLE FILES ====="
-          find android -maxdepth 4 -type f \
+          echo "===== ANDROID APP ====="
+          if [ -d android/app ]; then
+            ls -la android/app
+          else
+            echo "ERROR: android/app directory not found"
+            exit 1
+          fi
+
+          echo "===== ALL GRADLE FILES ====="
+          find android -type f \
             \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "gradle-wrapper.properties" \) \
             -print
 
@@ -114,60 +124,118 @@ jobs:
             echo "Skipping custom Android configuration."
           fi
 
-      - name: Fix core library desugaring
+      - name: Configure core library desugaring
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
 
-          path = Path("android/app/build.gradle")
-          
-          if not path.exists():
-              raise SystemExit("ERROR: android/app/build.gradle not found")
+          groovy = Path("android/app/build.gradle")
+          kotlin = Path("android/app/build.gradle.kts")
 
-          text = path.read_text(encoding="utf-8")
+          if groovy.exists():
+              print("Using Groovy Gradle file:")
+              print(groovy)
 
-          dependency = "coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'"
+              text = groovy.read_text(encoding="utf-8")
 
-          if dependency not in text:
-              if "dependencies {" in text:
-                  text = text.replace(
-                      "dependencies {",
-                      "dependencies {\n        " + dependency,
-                      1,
-                  )
-              else:
-                  text += "\n\ndependencies {\n    " + dependency + "\n}\n"
-
-          # Enable core library desugaring if compileOptions exists.
-          if "coreLibraryDesugaringEnabled true" not in text:
-              if "compileOptions {" in text:
-                  text = text.replace(
-                      "compileOptions {",
-                      "compileOptions {\n        coreLibraryDesugaringEnabled true",
-                      1,
-                  )
-              else:
-                  android_match = re.search(r"android\s*\{", text)
-
-                  if android_match:
-                      insert_at = android_match.end()
-                      text = (
-                          text[:insert_at]
-                          + "\n    compileOptions {\n"
-                            "        coreLibraryDesugaringEnabled true\n"
-                            "    }\n"
-                          + text[insert_at:]
+              # Enable desugaring.
+              if "coreLibraryDesugaringEnabled true" not in text:
+                  if "compileOptions {" in text:
+                      text = text.replace(
+                          "compileOptions {",
+                          "compileOptions {\n"
+                          "        coreLibraryDesugaringEnabled true",
+                          1,
                       )
                   else:
-                      raise SystemExit(
-                          "ERROR: android { block not found in build.gradle"
+                      marker = "android {"
+                      if marker in text:
+                          text = text.replace(
+                              marker,
+                              marker
+                              + "\n    compileOptions {\n"
+                              + "        coreLibraryDesugaringEnabled true\n"
+                              + "    }",
+                              1,
+                          )
+
+              dependency = (
+                  "coreLibraryDesugaring "
+                  "'com.android.tools:desugar_jdk_libs:2.1.5'"
+              )
+
+              if dependency not in text:
+                  if "dependencies {" in text:
+                      text = text.replace(
+                          "dependencies {",
+                          "dependencies {\n        " + dependency,
+                          1,
+                      )
+                  else:
+                      text += (
+                          "\n\ndependencies {\n"
+                          "    " + dependency + "\n"
+                          "}\n"
                       )
 
-          path.write_text(text, encoding="utf-8")
+              groovy.write_text(text, encoding="utf-8")
+              print(text)
 
-          print("===== android/app/build.gradle =====")
-          print(text)
+          elif kotlin.exists():
+              print("Using Kotlin DSL Gradle file:")
+              print(kotlin)
+
+              text = kotlin.read_text(encoding="utf-8")
+
+              # Enable desugaring.
+              if "isCoreLibraryDesugaringEnabled = true" not in text:
+                  if "compileOptions {" in text:
+                      text = text.replace(
+                          "compileOptions {",
+                          "compileOptions {\n"
+                          "        isCoreLibraryDesugaringEnabled = true",
+                          1,
+                      )
+                  else:
+                      marker = "android {"
+                      if marker in text:
+                          text = text.replace(
+                              marker,
+                              marker
+                              + "\n    compileOptions {\n"
+                              + "        isCoreLibraryDesugaringEnabled = true\n"
+                              + "    }",
+                              1,
+                          )
+
+              dependency = (
+                  'coreLibraryDesugaring("'
+                  "com.android.tools:desugar_jdk_libs:2.1.5"
+                  '")'
+              )
+
+              if dependency not in text:
+                  if "dependencies {" in text:
+                      text = text.replace(
+                          "dependencies {",
+                          "dependencies {\n        " + dependency,
+                          1,
+                      )
+                  else:
+                      text += (
+                          "\n\ndependencies {\n"
+                          "    " + dependency + "\n"
+                          "}\n"
+                      )
+
+              kotlin.write_text(text, encoding="utf-8")
+              print(text)
+
+          else:
+              raise SystemExit(
+                  "ERROR: Neither android/app/build.gradle nor "
+                  "android/app/build.gradle.kts exists."
+              )
           PY
 
       - name: Generate application icon
@@ -202,16 +270,10 @@ jobs:
 
       - name: Check build outputs
         run: |
-          echo "================================"
-          echo "APK"
-          echo "================================"
-
+          echo "===== APK ====="
           ls -lh build/app/outputs/flutter-apk/
 
-          echo "================================"
-          echo "AAB"
-          echo "================================"
-
+          echo "===== AAB ====="
           ls -lh build/app/outputs/bundle/release/
 
       - name: Upload Android artifacts
