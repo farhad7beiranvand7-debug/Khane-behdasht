@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shamsi_date/shamsi_date.dart';
 
 import '../../core/calendar/age_calculator.dart';
 import '../../core/calendar/jalali_birth_date.dart';
@@ -41,24 +40,34 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
   Future<void> _load() async {
     final completed = await _completionStore.load();
     if (!mounted) return;
+
     setState(() {
       _completed = completed;
       _loading = false;
     });
+
     await _reschedule();
   }
 
   List<ScheduleItem> get _items {
-    final reference = JalaliDateUtils.today();
-    return _engine.build(_member).map((item) {
-      final completedDate = _completed[item.id];
-      return completedDate == null ? item : item.copyWith(completedDate: completedDate);
-    }).toList()
+    return _engine
+        .build(_member)
+        .map((item) {
+          final completedDate = _completed[item.id];
+
+          return completedDate == null
+              ? item
+              : item.copyWith(completedDate: completedDate);
+        })
+        .toList()
       ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
   }
 
   Future<void> _reschedule() async {
-    await NotificationService.instance.reschedule(_items, _member.fullName);
+    await NotificationService.instance.reschedule(
+      _items,
+      _member.fullName,
+    );
   }
 
   Future<void> _toggleCompleted(ScheduleItem item) async {
@@ -67,21 +76,34 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
     } else {
       await _completionStore.setCompleted(
         item.id,
-        JalaliDateUtils.birthDateFrom(JalaliDateUtils.today()),
+        JalaliDateUtils.birthDateFrom(
+          JalaliDateUtils.today(),
+        ),
       );
     }
+
     final completed = await _completionStore.load();
+
     if (!mounted) return;
+
     setState(() => _completed = completed);
+
     await _reschedule();
   }
 
   Future<void> _edit() async {
     final updated = await Navigator.of(context).push<Person>(
-      MaterialPageRoute(builder: (_) => MemberFormPage(initialMember: _member)),
+      MaterialPageRoute(
+        builder: (_) => MemberFormPage(
+          initialMember: _member,
+        ),
+      ),
     );
+
     if (updated == null || !mounted) return;
+
     setState(() => _member = updated);
+
     await _reschedule();
   }
 
@@ -90,35 +112,69 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('حذف فرد'),
-        content: Text('آیا «${_member.fullName}» حذف شود؟'),
+        content: Text(
+          'آیا «${_member.fullName}» حذف شود؟',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('انصراف')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('حذف')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('انصراف'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('حذف'),
+          ),
         ],
       ),
     );
+
     if (confirmed != true) return;
+
     final members = await _memberStore.load();
-    await _memberStore.save(members.where((m) => m.id != _member.id).toList());
+
+    await _memberStore.save(
+      members.where((m) => m.id != _member.id).toList(),
+    );
+
     if (!mounted) return;
+
     Navigator.of(context).pop(true);
   }
 
   String _ageText() {
-    final age = _ageCalculator.calculate(birthDate: _member.birthDate);
-    if (age.years > 0) return '${age.years} سال و ${age.months} ماه';
-    if (age.months > 0) return '${age.months} ماه و ${age.days} روز';
+    final age = _ageCalculator.calculate(
+      birthDate: _member.birthDate,
+    );
+
+    if (age.years > 0) {
+      return '${age.years} سال و ${age.months} ماه';
+    }
+
+    if (age.months > 0) {
+      return '${age.months} ماه و ${age.days} روز';
+    }
+
     return '${age.days} روز';
   }
 
   ScheduleStatus _status(ScheduleItem item) {
-    if (item.isCompleted) return ScheduleStatus.completed;
+    if (item.isCompleted) {
+      return ScheduleStatus.completed;
+    }
+
     final today = JalaliDateUtils.today().toDateTime();
     final due = item.dueDate.toDateTime();
-    if (due.isBefore(today)) return ScheduleStatus.overdue;
-    if (due.year == today.year && due.month == today.month && due.day == today.day) {
+
+    if (due.isBefore(today)) {
+      return ScheduleStatus.overdue;
+    }
+
+    if (due.year == today.year &&
+        due.month == today.month &&
+        due.day == today.day) {
       return ScheduleStatus.due;
     }
+
     return ScheduleStatus.upcoming;
   }
 
@@ -135,7 +191,10 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
     }
   }
 
-  Color _statusColor(ScheduleStatus status, BuildContext context) {
+  Color _statusColor(
+    ScheduleStatus status,
+    BuildContext context,
+  ) {
     switch (status) {
       case ScheduleStatus.upcoming:
         return Theme.of(context).colorScheme.primary;
@@ -151,20 +210,36 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
   @override
   Widget build(BuildContext context) {
     final items = _items;
-    final upcoming = items.where((i) => !i.isCompleted && _status(i) != ScheduleStatus.overdue).toList();
+
+    final upcoming = items
+        .where(
+          (i) =>
+              !i.isCompleted &&
+              _status(i) != ScheduleStatus.overdue,
+        )
+        .toList();
+
     final next = upcoming.isEmpty ? null : upcoming.first;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(_member.fullName),
         actions: [
-          IconButton(onPressed: _edit, icon: const Icon(Icons.edit_outlined)),
-          IconButton(onPressed: _delete, icon: const Icon(Icons.delete_outline)),
+          IconButton(
+            onPressed: _edit,
+            icon: const Icon(Icons.edit_outlined),
+          ),
+          IconButton(
+            onPressed: _delete,
+            icon: const Icon(Icons.delete_outline),
+          ),
         ],
       ),
       body: SafeArea(
         child: _loading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
             : RefreshIndicator(
                 onRefresh: _load,
                 child: ListView(
@@ -174,14 +249,29 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
                           children: [
-                            Text(_member.fullName, style: Theme.of(context).textTheme.titleLarge),
+                            Text(
+                              _member.fullName,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge,
+                            ),
                             const SizedBox(height: 6),
-                            Text('تولد: ${_member.birthDate}'),
-                            Text('سن: ${_ageText()}'),
-                            Text('جنسیت: ${_member.sex == PersonSex.female ? 'زن' : 'مرد'}'),
-                            if (_member.isPregnant) const Text('بارداری: ثبت شده'),
+                            Text(
+                              'تولد: ${_member.birthDate}',
+                            ),
+                            Text(
+                              'سن: ${_ageText()}',
+                            ),
+                            Text(
+                              'جنسیت: ${_member.sex == PersonSex.female ? 'زن' : 'مرد'}',
+                            ),
+                            if (_member.isPregnant)
+                              const Text(
+                                'بارداری: ثبت شده',
+                              ),
                           ],
                         ),
                       ),
@@ -190,17 +280,28 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
                       const SizedBox(height: 12),
                       Card(
                         child: ListTile(
-                          leading: const Icon(Icons.event_available_outlined),
+                          leading: const Icon(
+                            Icons.event_available_outlined,
+                          ),
                           title: const Text('مراقبت بعدی'),
-                          subtitle: Text('${next.title} — ${next.dueDate}'),
+                          subtitle: Text(
+                            '${next.title} — ${next.dueDate}',
+                          ),
                         ),
                       ),
                     ],
                     const SizedBox(height: 20),
-                    Text('برنامه مراقبت و واکسیناسیون', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'برنامه مراقبت و واکسیناسیون',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium,
+                    ),
                     const SizedBox(height: 8),
                     if (items.isEmpty)
-                      const Text('موردی برای نمایش وجود ندارد.'),
+                      const Text(
+                        'موردی برای نمایش وجود ندارد.',
+                      ),
                     for (final item in items) _itemCard(item),
                     const SizedBox(height: 16),
                     const Text(
@@ -217,13 +318,15 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
   Widget _itemCard(ScheduleItem item) {
     final status = _status(item);
     final color = _statusColor(status, context);
+
     return Card(
       child: ListTile(
         leading: CircleAvatar(
           child: Icon(
             item.category == ScheduleCategory.vaccination
                 ? Icons.vaccines_outlined
-                : item.category == ScheduleCategory.pregnancy
+                : item.category ==
+                        ScheduleCategory.pregnancy
                     ? Icons.pregnant_woman_outlined
                     : Icons.health_and_safety_outlined,
           ),
@@ -240,7 +343,13 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(_statusLabel(status), style: TextStyle(color: color, fontSize: 11)),
+            Text(
+              _statusLabel(status),
+              style: TextStyle(
+                color: color,
+                fontSize: 11,
+              ),
+            ),
             Checkbox(
               value: item.isCompleted,
               onChanged: (_) => _toggleCompleted(item),
