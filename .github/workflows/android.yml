@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - master
-
   workflow_dispatch:
 
 permissions:
@@ -17,55 +16,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-      # ==========================================
-      # 1. دریافت Repository
-      # ==========================================
       - name: Checkout repository
         uses: actions/checkout@v4
 
-
-      # ==========================================
-      # 2. Java 17
-      # ==========================================
       - name: Set up Java 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-
-      # ==========================================
-      # 3. Python
-      # ==========================================
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-
-      # ==========================================
-      # 4. ابزار Python
-      # ==========================================
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install pillow
 
-
-      # ==========================================
-      # 5. Flutter
-      # ==========================================
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-
-      # ==========================================
-      # 6. بررسی پروژه
-      # ==========================================
       - name: Inspect project
         run: |
           echo "===== ROOT ====="
@@ -73,28 +48,21 @@ jobs:
 
           echo "===== PUBSPEC ====="
           if [ -f pubspec.yaml ]; then
-            echo "pubspec.yaml found"
             cat pubspec.yaml
           else
             echo "ERROR: pubspec.yaml not found"
             exit 1
           fi
 
-
-      # ==========================================
-      # 7. اصلاح نام پروژه Dart
-      # ==========================================
       - name: Fix Dart package name
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
           path = Path("pubspec.yaml")
-
           text = path.read_text(encoding="utf-8")
 
           lines = text.splitlines()
-
           found = False
 
           for i, line in enumerate(lines):
@@ -106,23 +74,15 @@ jobs:
           if not found:
               raise SystemExit("ERROR: name field not found in pubspec.yaml")
 
-          path.write_text(
-              "\n".join(lines) + "\n",
-              encoding="utf-8"
-          )
+          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
           print("Updated pubspec.yaml:")
           print(path.read_text(encoding="utf-8"))
           PY
 
-
-      # ==========================================
-      # 8. ایجاد Android
-      # ==========================================
       - name: Prepare Android platform
         run: |
           if [ ! -d "android" ]; then
-
             echo "Android folder does not exist."
             echo "Creating Android platform..."
 
@@ -130,31 +90,20 @@ jobs:
               --project-name khane_behdasht \
               --org ir.khane.behdasht \
               --platforms android
-
           else
-
             echo "Android folder already exists."
-
           fi
 
-
-      # ==========================================
-      # 9. بررسی Android
-      # ==========================================
       - name: Check Android project
         run: |
           echo "===== ANDROID ====="
           ls -la android
 
-          echo "===== GRADLE ====="
-          find android -maxdepth 3 -type f \
+          echo "===== GRADLE FILES ====="
+          find android -maxdepth 4 -type f \
             \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "gradle-wrapper.properties" \) \
             -print
 
-
-      # ==========================================
-      # 10. تنظیم Android اختصاصی پروژه
-      # ==========================================
       - name: Configure Android
         run: |
           if [ -f "tool/prepare_android.py" ]; then
@@ -165,10 +114,62 @@ jobs:
             echo "Skipping custom Android configuration."
           fi
 
+      - name: Fix core library desugaring
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
 
-      # ==========================================
-      # 11. ساخت آیکون
-      # ==========================================
+          path = Path("android/app/build.gradle")
+          
+          if not path.exists():
+              raise SystemExit("ERROR: android/app/build.gradle not found")
+
+          text = path.read_text(encoding="utf-8")
+
+          dependency = "coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'"
+
+          if dependency not in text:
+              if "dependencies {" in text:
+                  text = text.replace(
+                      "dependencies {",
+                      "dependencies {\n        " + dependency,
+                      1,
+                  )
+              else:
+                  text += "\n\ndependencies {\n    " + dependency + "\n}\n"
+
+          # Enable core library desugaring if compileOptions exists.
+          if "coreLibraryDesugaringEnabled true" not in text:
+              if "compileOptions {" in text:
+                  text = text.replace(
+                      "compileOptions {",
+                      "compileOptions {\n        coreLibraryDesugaringEnabled true",
+                      1,
+                  )
+              else:
+                  android_match = re.search(r"android\s*\{", text)
+
+                  if android_match:
+                      insert_at = android_match.end()
+                      text = (
+                          text[:insert_at]
+                          + "\n    compileOptions {\n"
+                            "        coreLibraryDesugaringEnabled true\n"
+                            "    }\n"
+                          + text[insert_at:]
+                      )
+                  else:
+                      raise SystemExit(
+                          "ERROR: android { block not found in build.gradle"
+                      )
+
+          path.write_text(text, encoding="utf-8")
+
+          print("===== android/app/build.gradle =====")
+          print(text)
+          PY
+
       - name: Generate application icon
         run: |
           if [ -f "tool/create_icon.py" ]; then
@@ -179,50 +180,26 @@ jobs:
             echo "Skipping custom icon generation."
           fi
 
-
-      # ==========================================
-      # 12. Flutter dependencies
-      # ==========================================
       - name: Flutter pub get
         run: |
           flutter pub get
 
-
-      # ==========================================
-      # 13. Analyze
-      # ==========================================
       - name: Flutter analyze
         run: |
           flutter analyze
 
-
-      # ==========================================
-      # 14. Tests
-      # ==========================================
       - name: Flutter tests
         run: |
           flutter test
 
-
-      # ==========================================
-      # 15. ساخت APK
-      # ==========================================
       - name: Build Release APK
         run: |
           flutter build apk --release
 
-
-      # ==========================================
-      # 16. ساخت AAB
-      # ==========================================
       - name: Build Release AAB
         run: |
           flutter build appbundle --release
 
-
-      # ==========================================
-      # 17. بررسی خروجی
-      # ==========================================
       - name: Check build outputs
         run: |
           echo "================================"
@@ -237,10 +214,6 @@ jobs:
 
           ls -lh build/app/outputs/bundle/release/
 
-
-      # ==========================================
-      # 18. ذخیره APK و AAB
-      # ==========================================
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
         with:
