@@ -8,40 +8,46 @@ class JalaliDateUtils {
   static Jalali today() => Jalali.fromDateTime(DateTime.now());
 
   static Jalali addDays(Jalali date, int days) {
-    if (days == 0) return date;
+    if (days == 0) {
+      return date;
+    }
 
     var year = date.year;
     var month = date.month;
     var day = date.day;
-    var remaining = days.abs();
-    final forward = days > 0;
 
-    while (remaining > 0) {
-      if (forward) {
-        if (day < Jalali(year, month, 1).monthLength) {
+    if (days > 0) {
+      for (var i = 0; i < days; i++) {
+        final monthLength = Jalali(year, month, 1).monthLength;
+
+        if (day < monthLength) {
           day++;
-        } else if (month < 12) {
-          month++;
-          day = 1;
         } else {
-          year++;
-          month = 1;
           day = 1;
+
+          if (month < 12) {
+            month++;
+          } else {
+            month = 1;
+            year++;
+          }
         }
-      } else {
+      }
+    } else {
+      for (var i = 0; i < -days; i++) {
         if (day > 1) {
           day--;
-        } else if (month > 1) {
-          month--;
-          day = Jalali(year, month, 1).monthLength;
         } else {
-          year--;
-          month = 12;
+          if (month > 1) {
+            month--;
+          } else {
+            month = 12;
+            year--;
+          }
+
           day = Jalali(year, month, 1).monthLength;
         }
       }
-
-      remaining--;
     }
 
     return Jalali(year, month, day);
