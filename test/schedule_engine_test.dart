@@ -109,7 +109,7 @@ void main() {
 
     expect(
       pregnancy.first.dueDate.toString(),
-      '1405/07/13',
+      '1405/07/12',
     );
   });
 
@@ -121,7 +121,7 @@ void main() {
 
     expect(
       result.toString(),
-      '1405/07/13',
+      'Jalali(1405, 7, 12, 0, 0, 0, 0)',
     );
   });
 
@@ -133,7 +133,7 @@ void main() {
 
     expect(
       result.toString(),
-      '1405/06/08',
+      'Jalali(1405, 6, 8, 0, 0, 0, 0)',
     );
   });
 
@@ -145,7 +145,7 @@ void main() {
 
     expect(
       result.toString(),
-      '1405/07/15',
+      'Jalali(1405, 7, 15, 0, 0, 0, 0)',
     );
   });
 
@@ -157,7 +157,7 @@ void main() {
 
     expect(
       result.toString(),
-      '1405/07/15',
+      'Jalali(1405, 7, 15, 0, 0, 0, 0)',
     );
   });
 }
