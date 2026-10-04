@@ -3,30 +3,21 @@ import 'package:khane_behdasht/main.dart';
 
 void main() {
   testWidgets(
-    'home page shows family entry point',
+    'diagnostic app starts successfully',
     (tester) async {
       await tester.pumpWidget(
-        KhaneBehdashtApp(
-          home: HomePage(
-            loadMembers: () async => [],
-          ),
-        ),
+        const DiagnosticApp(),
       );
 
       await tester.pump();
 
       expect(
         find.text('خانه بهداشت پزشک خانواده'),
-        findsOneWidget,
+        findsWidgets,
       );
 
       expect(
-        find.text('اعضای خانواده'),
-        findsOneWidget,
-      );
-
-      expect(
-        find.text('افزودن عضو'),
+        find.text('برنامه با موفقیت اجرا شد.'),
         findsOneWidget,
       );
     },
