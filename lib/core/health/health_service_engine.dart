@@ -6,13 +6,15 @@ class HealthServiceEngine {
 
   List<HealthService> servicesFor(Person person) {
     final age = _calculateAge(person);
+
     final female = person.sex == PersonSex.female;
+
     final pregnant = person.isPregnant;
 
     final services = <HealthService>[
-      // -----------------------------
-      // مراقبت های دوره ای
-      // -----------------------------
+      // ============================================================
+      // مراقبت‌های دوره‌ای
+      // ============================================================
 
       const HealthService(
         id: 'periodic-vitals',
@@ -32,6 +34,7 @@ class HealthServiceEngine {
         description:
             'بررسی رشد، وزن و وضعیت بدنی متناسب با سن.',
         category: HealthServiceCategory.periodicCare,
+        status: HealthServiceStatus.information,
       ),
 
       const HealthService(
@@ -41,11 +44,12 @@ class HealthServiceEngine {
         description:
             'بررسی تغذیه، فعالیت بدنی و عادت‌های مؤثر بر سلامت.',
         category: HealthServiceCategory.nutrition,
+        status: HealthServiceStatus.information,
       ),
 
-      // -----------------------------
-      // غربالگری
-      // -----------------------------
+      // ============================================================
+      // غربالگری‌ها
+      // ============================================================
 
       const HealthService(
         id: 'screening-diabetes',
@@ -65,12 +69,13 @@ class HealthServiceEngine {
         description:
             'ارزیابی عوامل خطر بیماری‌های قلبی و عروقی.',
         category: HealthServiceCategory.screening,
+        status: HealthServiceStatus.information,
         ageMin: 30,
       ),
 
-      // -----------------------------
+      // ============================================================
       // سلامت روان
-      // -----------------------------
+      // ============================================================
 
       const HealthService(
         id: 'mental-health',
@@ -79,12 +84,13 @@ class HealthServiceEngine {
         description:
             'بررسی وضعیت سلامت روان و عوامل مؤثر بر آن.',
         category: HealthServiceCategory.mentalHealth,
+        status: HealthServiceStatus.information,
         ageMin: 10,
       ),
 
-      // -----------------------------
+      // ============================================================
       // سلامت دهان و دندان
-      // -----------------------------
+      // ============================================================
 
       const HealthService(
         id: 'oral-health',
@@ -93,11 +99,12 @@ class HealthServiceEngine {
         description:
             'مراقبت و بررسی سلامت دهان و دندان متناسب با سن.',
         category: HealthServiceCategory.oralHealth,
+        status: HealthServiceStatus.information,
       ),
 
-      // -----------------------------
-      // زنان
-      // -----------------------------
+      // ============================================================
+      // سلامت زنان
+      // ============================================================
 
       const HealthService(
         id: 'women-health',
@@ -106,14 +113,15 @@ class HealthServiceEngine {
         description:
             'مراقبت‌های سلامت اختصاصی زنان در سنین هدف.',
         category: HealthServiceCategory.women,
+        status: HealthServiceStatus.information,
         femaleOnly: true,
         ageMin: 10,
         ageMax: 54,
       ),
 
-      // -----------------------------
+      // ============================================================
       // بارداری
-      // -----------------------------
+      // ============================================================
 
       const HealthService(
         id: 'pregnancy-care',
@@ -122,6 +130,7 @@ class HealthServiceEngine {
         description:
             'مراقبت‌ها و پیگیری‌های مورد نیاز دوران بارداری.',
         category: HealthServiceCategory.pregnancy,
+        status: HealthServiceStatus.action,
         femaleOnly: true,
         requiresPregnancy: true,
       ),
@@ -143,9 +152,13 @@ class HealthServiceEngine {
 
     final now = DateTime.now();
 
-    // تبدیل تقریبی برای تعیین گروه سنی.
-    // منطق دقیق سن شمسی را در مرحله بعد به AgeCalculator
-    // موجود در پروژه متصل می‌کنیم.
+    // تبدیل سال میلادی به سال شمسی برای تعیین گروه سنی.
+    //
+    // این بخش فعلاً برای تعیین گروه سنی استفاده می‌شود.
+    // در مرحله بعد می‌توانیم آن را مستقیماً به
+    // AgeCalculator موجود در پروژه متصل کنیم تا
+    // محاسبه سن کاملاً دقیق و یکپارچه باشد.
+
     final currentYear = now.year - 621;
 
     var age = currentYear - birth.year;
@@ -154,7 +167,8 @@ class HealthServiceEngine {
     final currentDay = now.day;
 
     if (birth.month > currentMonth ||
-        (birth.month == currentMonth && birth.day > currentDay)) {
+        (birth.month == currentMonth &&
+            birth.day > currentDay)) {
       age--;
     }
 
