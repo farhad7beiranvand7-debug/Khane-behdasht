@@ -9,18 +9,24 @@ import '../../core/scheduling/schedule_engine.dart';
 import '../../data/completion_store.dart';
 import '../../data/family_member_store.dart';
 import '../../domain/models/person.dart';
+import 'health_services_page.dart';
 import 'member_form_page.dart';
 
 class PersonSchedulePage extends StatefulWidget {
-  const PersonSchedulePage({super.key, required this.member});
+  const PersonSchedulePage({
+    super.key,
+    required this.member,
+  });
 
   final Person member;
 
   @override
-  State<PersonSchedulePage> createState() => _PersonSchedulePageState();
+  State<PersonSchedulePage> createState() =>
+      _PersonSchedulePageState();
 }
 
-class _PersonSchedulePageState extends State<PersonSchedulePage> {
+class _PersonSchedulePageState
+    extends State<PersonSchedulePage> {
   final _engine = const ScheduleEngine();
   final _completionStore = const CompletionStore();
   final _memberStore = const FamilyMemberStore();
@@ -28,39 +34,59 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
 
   Map<String, JalaliBirthDate> _completed = {};
   late Person _member;
+
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
+
     _member = widget.member;
+
     _load();
   }
 
   Future<void> _load() async {
-    final completed = await _completionStore.load();
-    if (!mounted) return;
+    try {
+      final completed =
+          await _completionStore.load();
 
-    setState(() {
-      _completed = completed;
-      _loading = false;
-    });
+      if (!mounted) return;
 
-    await _reschedule();
+      setState(() {
+        _completed = completed;
+        _loading = false;
+      });
+
+      await _reschedule();
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _loading = false;
+      });
+    }
   }
 
   List<ScheduleItem> get _items {
     return _engine
         .build(_member)
         .map((item) {
-          final completedDate = _completed[item.id];
+          final completedDate =
+              _completed[item.id];
 
           return completedDate == null
               ? item
-              : item.copyWith(completedDate: completedDate);
+              : item.copyWith(
+                  completedDate: completedDate,
+                );
         })
         .toList()
-      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+      ..sort(
+        (a, b) => a.dueDate.compareTo(
+          b.dueDate,
+        ),
+      );
   }
 
   Future<void> _reschedule() async {
@@ -70,7 +96,9 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
     );
   }
 
-  Future<void> _toggleCompleted(ScheduleItem item) async {
+  Future<void> _toggleCompleted(
+    ScheduleItem item,
+  ) async {
     if (item.isCompleted) {
       await _completionStore.clear(item.id);
     } else {
@@ -82,17 +110,21 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
       );
     }
 
-    final completed = await _completionStore.load();
+    final completed =
+        await _completionStore.load();
 
     if (!mounted) return;
 
-    setState(() => _completed = completed);
+    setState(() {
+      _completed = completed;
+    });
 
     await _reschedule();
   }
 
   Future<void> _edit() async {
-    final updated = await Navigator.of(context).push<Person>(
+    final updated =
+        await Navigator.of(context).push<Person>(
       MaterialPageRoute(
         builder: (_) => MemberFormPage(
           initialMember: _member,
@@ -102,13 +134,16 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
 
     if (updated == null || !mounted) return;
 
-    setState(() => _member = updated);
+    setState(() {
+      _member = updated;
+    });
 
     await _reschedule();
   }
 
   Future<void> _delete() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+        await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('حذف فرد'),
@@ -117,11 +152,13 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () =>
+                Navigator.pop(context, false),
             child: const Text('انصراف'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () =>
+                Navigator.pop(context, true),
             child: const Text('حذف'),
           ),
         ],
@@ -130,10 +167,15 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
 
     if (confirmed != true) return;
 
-    final members = await _memberStore.load();
+    final members =
+        await _memberStore.load();
 
     await _memberStore.save(
-      members.where((m) => m.id != _member.id).toList(),
+      members
+          .where(
+            (m) => m.id != _member.id,
+          )
+          .toList(),
     );
 
     if (!mounted) return;
@@ -142,7 +184,8 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
   }
 
   String _ageText() {
-    final age = _ageCalculator.calculate(
+    final age =
+        _ageCalculator.calculate(
       birthDate: _member.birthDate,
     );
 
@@ -157,13 +200,18 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
     return '${age.days} روز';
   }
 
-  ScheduleStatus _status(ScheduleItem item) {
+  ScheduleStatus _status(
+    ScheduleItem item,
+  ) {
     if (item.isCompleted) {
       return ScheduleStatus.completed;
     }
 
-    final today = JalaliDateUtils.today().toDateTime();
-    final due = item.dueDate.toDateTime();
+    final today =
+        JalaliDateUtils.today().toDateTime();
+
+    final due =
+        item.dueDate.toDateTime();
 
     if (due.isBefore(today)) {
       return ScheduleStatus.overdue;
@@ -178,14 +226,19 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
     return ScheduleStatus.upcoming;
   }
 
-  String _statusLabel(ScheduleStatus status) {
+  String _statusLabel(
+    ScheduleStatus status,
+  ) {
     switch (status) {
       case ScheduleStatus.upcoming:
         return 'پیش رو';
+
       case ScheduleStatus.due:
         return 'امروز';
+
       case ScheduleStatus.overdue:
         return 'نیاز به بررسی';
+
       case ScheduleStatus.completed:
         return 'انجام شد';
     }
@@ -197,14 +250,37 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
   ) {
     switch (status) {
       case ScheduleStatus.upcoming:
-        return Theme.of(context).colorScheme.primary;
+        return Theme.of(context)
+            .colorScheme
+            .primary;
+
       case ScheduleStatus.due:
-        return Theme.of(context).colorScheme.tertiary;
+        return Theme.of(context)
+            .colorScheme
+            .tertiary;
+
       case ScheduleStatus.overdue:
-        return Theme.of(context).colorScheme.error;
+        return Theme.of(context)
+            .colorScheme
+            .error;
+
       case ScheduleStatus.completed:
         return Colors.green;
     }
+  }
+
+  /// صفحه جدید خدمات سلامت
+  ///
+  /// این صفحه اطلاعات سلامت عمومی را به صورت
+  /// دسته‌بندی‌شده و قابل فهم نمایش می‌دهد.
+  void _openHealthServices() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => HealthServicesPage(
+          person: _member,
+        ),
+      ),
+    );
   }
 
   @override
@@ -215,59 +291,100 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
         .where(
           (i) =>
               !i.isCompleted &&
-              _status(i) != ScheduleStatus.overdue,
+              _status(i) !=
+                  ScheduleStatus.overdue,
         )
         .toList();
 
-    final next = upcoming.isEmpty ? null : upcoming.first;
+    final next =
+        upcoming.isEmpty ? null : upcoming.first;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_member.fullName),
+        title: Text(
+          _member.fullName,
+        ),
         actions: [
+          // -----------------------------
+          // مراقبت‌های سلامت
+          // -----------------------------
           IconButton(
-            onPressed: _edit,
-            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'مراقبت‌های سلامت',
+            onPressed: _openHealthServices,
+            icon: const Icon(
+              Icons.health_and_safety_outlined,
+            ),
           ),
+
+          // ویرایش
           IconButton(
+            tooltip: 'ویرایش',
+            onPressed: _edit,
+            icon: const Icon(
+              Icons.edit_outlined,
+            ),
+          ),
+
+          // حذف
+          IconButton(
+            tooltip: 'حذف',
             onPressed: _delete,
-            icon: const Icon(Icons.delete_outline),
+            icon: const Icon(
+              Icons.delete_outline,
+            ),
           ),
         ],
       ),
+
       body: SafeArea(
         child: _loading
             ? const Center(
-                child: CircularProgressIndicator(),
+                child:
+                    CircularProgressIndicator(),
               )
             : RefreshIndicator(
                 onRefresh: _load,
                 child: ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding:
+                      const EdgeInsets.all(16),
                   children: [
+                    // ==================================
+                    // مشخصات فرد
+                    // ==================================
+
                     Card(
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding:
+                            const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                              CrossAxisAlignment
+                                  .start,
                           children: [
                             Text(
                               _member.fullName,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge,
+                              style:
+                                  Theme.of(context)
+                                      .textTheme
+                                      .titleLarge,
                             ),
-                            const SizedBox(height: 6),
+
+                            const SizedBox(
+                              height: 6,
+                            ),
+
                             Text(
                               'تولد: ${_member.birthDate}',
                             ),
+
                             Text(
                               'سن: ${_ageText()}',
                             ),
+
                             Text(
                               'جنسیت: ${_member.sex == PersonSex.female ? 'زن' : 'مرد'}',
                             ),
+
                             if (_member.isPregnant)
                               const Text(
                                 'بارداری: ثبت شده',
@@ -276,37 +393,186 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
                         ),
                       ),
                     ),
+
+                    const SizedBox(
+                      height: 12,
+                    ),
+
+                    // ==================================
+                    // دکمه اصلی مراقبت‌های سلامت
+                    // ==================================
+
+                    Card(
+                      clipBehavior:
+                          Clip.antiAlias,
+                      child: InkWell(
+                        onTap:
+                            _openHealthServices,
+                        child: Padding(
+                          padding:
+                              const EdgeInsets.all(
+                            18,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 52,
+                                height: 52,
+                                decoration:
+                                    BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  )
+                                      .colorScheme
+                                      .primaryContainer,
+                                  borderRadius:
+                                      BorderRadius
+                                          .circular(
+                                    16,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons
+                                      .health_and_safety_outlined,
+                                  color: Theme.of(
+                                    context,
+                                  )
+                                      .colorScheme
+                                      .onPrimaryContainer,
+                                  size: 28,
+                                ),
+                              ),
+
+                              const SizedBox(
+                                width: 14,
+                              ),
+
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment
+                                          .start,
+                                  children: [
+                                    Text(
+                                      'مراقبت‌های سلامت',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight:
+                                            FontWeight
+                                                .bold,
+                                      ),
+                                    ),
+
+                                    SizedBox(
+                                      height: 5,
+                                    ),
+
+                                    Text(
+                                      'بررسی‌ها، غربالگری‌ها و خدمات مناسب این فرد',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const Icon(
+                                Icons
+                                    .chevron_left,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // ==================================
+                    // مراقبت بعدی
+                    // ==================================
+
                     if (next != null) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(
+                        height: 12,
+                      ),
+
                       Card(
                         child: ListTile(
                           leading: const Icon(
-                            Icons.event_available_outlined,
+                            Icons
+                                .event_available_outlined,
                           ),
-                          title: const Text('مراقبت بعدی'),
+                          title: const Text(
+                            'مراقبت بعدی',
+                          ),
                           subtitle: Text(
                             '${next.title} — ${next.dueDate}',
                           ),
                         ),
                       ),
                     ],
-                    const SizedBox(height: 20),
+
+                    const SizedBox(
+                      height: 20,
+                    ),
+
+                    // ==================================
+                    // برنامه فعلی واکسیناسیون و مراقبت
+                    // ==================================
+
                     Text(
                       'برنامه مراقبت و واکسیناسیون',
                       style: Theme.of(context)
                           .textTheme
-                          .titleMedium,
+                          .titleMedium
+                          ?.copyWith(
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
                     ),
-                    const SizedBox(height: 8),
-                    if (items.isEmpty)
-                      const Text(
-                        'موردی برای نمایش وجود ندارد.',
+
+                    const SizedBox(
+                      height: 8,
+                    ),
+
+                    const Text(
+                      'این بخش برنامه‌های زمان‌بندی‌شده فعلی فرد را نشان می‌دهد.',
+                      style: TextStyle(
+                        fontSize: 13,
                       ),
-                    for (final item in items) _itemCard(item),
-                    const SizedBox(height: 16),
+                    ),
+
+                    const SizedBox(
+                      height: 8,
+                    ),
+
+                    if (items.isEmpty)
+                      const Card(
+                        child: Padding(
+                          padding:
+                              EdgeInsets.all(16),
+                          child: Text(
+                            'موردی برای نمایش وجود ندارد.',
+                          ),
+                        ),
+                      ),
+
+                    // ==================================
+                    // آیتم‌های برنامه
+                    // ==================================
+
+                    for (final item in items)
+                      _itemCard(item),
+
+                    const SizedBox(
+                      height: 16,
+                    ),
+
                     const Text(
                       'این برنامه برای یادآوری و نظم‌دهی مراقبت‌هاست و جایگزین ارزیابی پزشک یا ماما نیست.',
-                      style: TextStyle(fontSize: 12),
+                      style: TextStyle(
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -315,33 +581,57 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
     );
   }
 
-  Widget _itemCard(ScheduleItem item) {
-    final status = _status(item);
-    final color = _statusColor(status, context);
+  Widget _itemCard(
+    ScheduleItem item,
+  ) {
+    final status =
+        _status(item);
+
+    final color =
+        _statusColor(
+      status,
+      context,
+    );
 
     return Card(
       child: ListTile(
         leading: CircleAvatar(
           child: Icon(
-            item.category == ScheduleCategory.vaccination
+            item.category ==
+                    ScheduleCategory
+                        .vaccination
                 ? Icons.vaccines_outlined
                 : item.category ==
-                        ScheduleCategory.pregnancy
-                    ? Icons.pregnant_woman_outlined
-                    : Icons.health_and_safety_outlined,
+                        ScheduleCategory
+                            .pregnancy
+                    ? Icons
+                        .pregnant_woman_outlined
+                    : Icons
+                        .health_and_safety_outlined,
           ),
         ),
-        title: Text(item.title),
+
+        title: Text(
+          item.title,
+        ),
+
         subtitle: Text(
           [
-            if (item.dose != null) item.dose!,
+            if (item.dose != null)
+              item.dose!,
+
             'تاریخ: ${item.dueDate}',
-            if (item.description != null) item.description!,
+
+            if (item.description != null)
+              item.description!,
           ].join('\n'),
         ),
+
         isThreeLine: true,
+
         trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment:
+              MainAxisAlignment.center,
           children: [
             Text(
               _statusLabel(status),
@@ -350,9 +640,14 @@ class _PersonSchedulePageState extends State<PersonSchedulePage> {
                 fontSize: 11,
               ),
             ),
+
             Checkbox(
-              value: item.isCompleted,
-              onChanged: (_) => _toggleCompleted(item),
+              value:
+                  item.isCompleted,
+              onChanged: (_) =>
+                  _toggleCompleted(
+                    item,
+                  ),
             ),
           ],
         ),
