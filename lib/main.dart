@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 
-import 'core/notifications/notification_service.dart';
 import 'data/family_member_store.dart';
 import 'domain/models/person.dart';
+import 'presentation/pages/about_page.dart';
 import 'presentation/pages/member_form_page.dart';
 import 'presentation/pages/person_schedule_page.dart';
-import 'presentation/pages/about_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await NotificationService.instance.initialize();
 
   runApp(const KhaneBehdashtApp());
 }
