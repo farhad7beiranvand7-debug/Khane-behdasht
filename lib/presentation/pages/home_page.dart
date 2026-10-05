@@ -10,7 +10,12 @@ import 'member_form_page.dart';
 import 'person_schedule_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({
+    super.key,
+    this.loadMembers,
+  });
+
+  final Future<List<Person>> Function()? loadMembers;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -34,7 +39,9 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _load() async {
     try {
-      final members = await _store.load();
+      final members = widget.loadMembers != null
+          ? await widget.loadMembers!()
+          : await _store.load();
 
       if (!mounted) return;
 
@@ -146,15 +153,11 @@ class _HomePageState extends State<HomePage> {
                   ),
                   children: [
                     const _WelcomeHeader(),
-
                     const SizedBox(height: 24),
-
                     const _SectionHeader(
                       title: 'دسترسی سریع',
                     ),
-
                     const SizedBox(height: 12),
-
                     _QuickActions(
                       onServices: _openServices,
                       onMembers: _openMembers,
@@ -163,17 +166,13 @@ class _HomePageState extends State<HomePage> {
                       onPregnancy: _openServices,
                       onMentalHealth: _openServices,
                     ),
-
                     const SizedBox(height: 26),
-
                     _SectionHeader(
                       title: 'مراقبت‌های پیش رو',
                       actionText: 'مشاهده همه',
                       onAction: _openServices,
                     ),
-
                     const SizedBox(height: 12),
-
                     if (importantServices.isEmpty)
                       _EmptyCareCard(
                         onAdd: _addMember,
@@ -189,17 +188,13 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ),
-
                     const SizedBox(height: 16),
-
                     _SectionHeader(
                       title: 'افراد تحت پوشش',
                       actionText: 'افزودن',
                       onAction: _addMember,
                     ),
-
                     const SizedBox(height: 12),
-
                     if (_members.isEmpty)
                       _EmptyMembersCard(
                         onAdd: _addMember,
@@ -210,9 +205,7 @@ class _HomePageState extends State<HomePage> {
                         onMemberTap: _openMember,
                         onAdd: _addMember,
                       ),
-
                     const SizedBox(height: 20),
-
                     const _InfoCard(),
                   ],
                 ),
@@ -909,4 +902,3 @@ class _BottomNav extends StatelessWidget {
     );
   }
 }
-
