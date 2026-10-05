@@ -247,7 +247,8 @@ class _HomePageState extends State<HomePage> {
             size: 25,
           ),
           SizedBox(width: 9),
-          Text('تست جدید 123'
+          Text(
+            'خانه بهداشت',
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
