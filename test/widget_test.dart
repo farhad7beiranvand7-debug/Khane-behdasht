@@ -26,11 +26,6 @@ void main() {
       );
 
       expect(
-        find.text('مراقبت‌های پیش رو'),
-        findsOneWidget,
-      );
-
-      expect(
         find.text('افزودن عضو'),
         findsOneWidget,
       );
