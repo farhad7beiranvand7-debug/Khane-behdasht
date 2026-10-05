@@ -26,7 +26,7 @@ void main() {
       );
 
       expect(
-        find.text('افراد تحت پوشش'),
+        find.text('مراقبت‌های پیش رو'),
         findsOneWidget,
       );
 
