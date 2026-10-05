@@ -16,12 +16,17 @@ void main() {
       await tester.pump();
 
       expect(
-        find.text('خانه بهداشت پزشک خانواده'),
+        find.text('سلام'),
         findsOneWidget,
       );
 
       expect(
-        find.text('اعضای خانواده'),
+        find.text('دسترسی سریع'),
+        findsOneWidget,
+      );
+
+      expect(
+        find.text('افراد تحت پوشش'),
         findsOneWidget,
       );
 
@@ -32,3 +37,14 @@ void main() {
     },
   );
 }
+
+بعد فقط Commit changes بزن و Workflow را اجرا کن.
+
+این بار انتظار داریم:
+
+- "flutter analyze" ✅
+- هر ۱۵ تست یا بیشتر ✅
+- سپس "Build Release APK" اجرا شود
+- سپس "Build Release AAB" اجرا شود
+
+هیچ فایل دیگری را فعلاً تغییر نده.
