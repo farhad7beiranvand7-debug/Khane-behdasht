@@ -18,7 +18,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   static const _green = Color(0xFF2E7D4F);
-  static const _lightGreen = Color(0xFFF1F8F3);
   static const _background = Color(0xFFF9FBFA);
 
   final _store = const FamilyMemberStore();
@@ -188,7 +187,7 @@ class _HomePageState extends State<HomePage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Row(
@@ -279,7 +278,7 @@ class _GreetingCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.75),
+                    color: Colors.white.withValues(alpha: 0.75),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Text(
@@ -299,7 +298,7 @@ class _GreetingCard extends StatelessWidget {
             width: 74,
             height: 74,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white.withValues(alpha: 0.85),
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 3),
             ),
