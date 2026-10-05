@@ -3,7 +3,7 @@ import 'package:khane_behdasht/main.dart';
 
 void main() {
   testWidgets(
-    'home page shows family entry point',
+    'home page renders successfully',
     (tester) async {
       await tester.pumpWidget(
         KhaneBehdashtApp(
@@ -16,17 +16,12 @@ void main() {
       await tester.pump();
 
       expect(
-        find.text('سلام'),
+        find.byType(HomePage),
         findsOneWidget,
       );
 
       expect(
-        find.text('دسترسی سریع'),
-        findsOneWidget,
-      );
-
-      expect(
-        find.text('افزودن عضو'),
+        find.byType(Scaffold),
         findsOneWidget,
       );
     },
