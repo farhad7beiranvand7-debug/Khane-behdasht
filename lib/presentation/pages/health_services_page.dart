@@ -18,13 +18,19 @@ class HealthServicesPage extends StatelessWidget {
 
     final services = engine.servicesFor(person);
 
-    final actionServices = services
+    final important = services
         .where(
-          (item) => item.status == HealthServiceStatus.action,
+          (service) =>
+              service.status == HealthServiceStatus.action ||
+              service.status == HealthServiceStatus.upcoming,
         )
         .toList();
 
     final categories = <HealthServiceCategory>[
+      HealthServiceCategory.child,
+      HealthServiceCategory.adolescent,
+      HealthServiceCategory.youth,
+      HealthServiceCategory.elderly,
       HealthServiceCategory.periodicCare,
       HealthServiceCategory.screening,
       HealthServiceCategory.vaccination,
@@ -40,21 +46,26 @@ class HealthServicesPage extends StatelessWidget {
         title: const Text('مراقبت‌های سلامت'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          32,
+        ),
         children: [
           _PersonHeader(person: person),
 
           const SizedBox(height: 20),
 
-          if (actionServices.isNotEmpty)
-            _ActionCard(
-              services: actionServices,
+          if (important.isNotEmpty)
+            _ImportantCard(
+              services: important,
             ),
 
           const SizedBox(height: 20),
 
           Text(
-            'خدمات سلامت',
+            'خدمات مربوط به شما',
             style: Theme.of(context)
                 .textTheme
                 .headlineSmall
@@ -63,10 +74,10 @@ class HealthServicesPage extends StatelessWidget {
                 ),
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
 
           const Text(
-            'بر اساس سن، جنسیت و شرایط ثبت‌شده برای این فرد.',
+            'برنامه بر اساس سن، جنسیت و شرایط ثبت‌شده، موارد مرتبط را نمایش می‌دهد.',
           ),
 
           const SizedBox(height: 16),
@@ -80,6 +91,15 @@ class HealthServicesPage extends StatelessWidget {
                   )
                   .toList(),
             ),
+
+          const SizedBox(height: 12),
+
+          const Text(
+            'توجه: زمان و نوع بعضی خدمات بر اساس دستورالعمل، سابقه فرد و نظر کارکنان مرکز سلامت تعیین می‌شود.',
+            style: TextStyle(
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
@@ -100,10 +120,12 @@ class _PersonHeader extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         child: Row(
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 28,
               child: Icon(
-                Icons.person_outline,
+                person.sex == PersonSex.female
+                    ? Icons.woman_outlined
+                    : Icons.man_outlined,
               ),
             ),
             const SizedBox(width: 14),
@@ -122,6 +144,16 @@ class _PersonHeader extends StatelessWidget {
                   Text(
                     'تاریخ تولد: ${person.birthDate}',
                   ),
+                  if (person.isPregnant)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Text(
+                        'وضعیت بارداری: ثبت شده',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -132,8 +164,8 @@ class _PersonHeader extends StatelessWidget {
   }
 }
 
-class _ActionCard extends StatelessWidget {
-  const _ActionCard({
+class _ImportantCard extends StatelessWidget {
+  const _ImportantCard({
     required this.services,
   });
 
@@ -141,6 +173,8 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -150,15 +184,13 @@ class _ActionCard extends StatelessWidget {
             Row(
               children: [
                 Icon(
-                  Icons.priority_high_rounded,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .error,
+                  Icons.event_available_outlined,
+                  color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
-                    'الان مهم است',
+                    'مراقبت‌های پیش رو',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -167,26 +199,52 @@ class _ActionCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+
+            const SizedBox(height: 6),
+
             const Text(
-              'این موارد در حال حاضر نیاز به توجه دارند.',
+              'این موارد بر اساس اطلاعات ثبت‌شده برای این فرد مرتبط هستند.',
             ),
+
             const SizedBox(height: 12),
+
             for (final service in services)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(
-                  Icons.arrow_back_ios_new,
-                  size: 18,
-                ),
-                title: Text(
-                  service.shortTitle,
-                ),
-                subtitle: Text(
-                  service.description,
-                ),
+              _ImportantServiceTile(
+                service: service,
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ImportantServiceTile extends StatelessWidget {
+  const _ImportantServiceTile({
+    required this.service,
+  });
+
+  final HealthService service;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(
+          child: Icon(
+            _iconFor(service.category),
+          ),
+        ),
+        title: Text(
+          service.shortTitle,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          service.description,
         ),
       ),
     );
@@ -209,7 +267,7 @@ class _CategoryCard extends StatelessWidget {
     }
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 10),
       child: ExpansionTile(
         leading: Icon(
           _iconFor(category),
@@ -221,17 +279,12 @@ class _CategoryCard extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          '${services.length} مورد',
+          '${services.length} خدمت',
         ),
         children: [
           for (final service in services)
-            ListTile(
-              title: Text(
-                service.title,
-              ),
-              subtitle: Text(
-                service.description,
-              ),
+            _ServiceTile(
+              service: service,
             ),
         ],
       ),
@@ -242,11 +295,23 @@ class _CategoryCard extends StatelessWidget {
     HealthServiceCategory category,
   ) {
     switch (category) {
+      case HealthServiceCategory.child:
+        return 'کودک';
+
+      case HealthServiceCategory.adolescent:
+        return 'نوجوان';
+
+      case HealthServiceCategory.youth:
+        return 'جوان';
+
+      case HealthServiceCategory.elderly:
+        return 'سالمند';
+
       case HealthServiceCategory.periodicCare:
         return 'مراقبت‌های دوره‌ای';
 
       case HealthServiceCategory.screening:
-        return 'بررسی‌ها و غربالگری‌ها';
+        return 'غربالگری و بررسی‌ها';
 
       case HealthServiceCategory.vaccination:
         return 'واکسیناسیون';
@@ -255,46 +320,118 @@ class _CategoryCard extends StatelessWidget {
         return 'سلامت زنان';
 
       case HealthServiceCategory.pregnancy:
-        return 'مراقبت بارداری';
+        return 'بارداری';
 
       case HealthServiceCategory.mentalHealth:
         return 'سلامت روان';
 
       case HealthServiceCategory.nutrition:
-        return 'تغذیه و فعالیت بدنی';
+        return 'تغذیه و سبک زندگی';
 
       case HealthServiceCategory.oralHealth:
-        return 'سلامت دهان و دندان';
+        return 'دهان و دندان';
     }
   }
+}
 
-  IconData _iconFor(
-    HealthServiceCategory category,
-  ) {
-    switch (category) {
-      case HealthServiceCategory.periodicCare:
-        return Icons.monitor_heart_outlined;
+class _ServiceTile extends StatelessWidget {
+  const _ServiceTile({
+    required this.service,
+  });
 
-      case HealthServiceCategory.screening:
-        return Icons.search_rounded;
+  final HealthService service;
 
-      case HealthServiceCategory.vaccination:
-        return Icons.vaccines_outlined;
+  @override
+  Widget build(BuildContext context) {
+    final statusText = _statusText(service.status);
 
-      case HealthServiceCategory.women:
-        return Icons.woman_outlined;
+    return ListTile(
+      leading: Icon(
+        _iconFor(service.category),
+      ),
+      title: Text(
+        service.title,
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 3),
+          Text(
+            service.description,
+          ),
+          const SizedBox(height: 5),
+          Text(
+            statusText,
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context)
+                  .colorScheme
+                  .primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-      case HealthServiceCategory.pregnancy:
-        return Icons.pregnant_woman_outlined;
+String _statusText(
+  HealthServiceStatus status,
+) {
+  switch (status) {
+    case HealthServiceStatus.action:
+      return 'نیازمند توجه';
 
-      case HealthServiceCategory.mentalHealth:
-        return Icons.psychology_outlined;
+    case HealthServiceStatus.upcoming:
+      return 'در برنامه مراقبت';
 
-      case HealthServiceCategory.nutrition:
-        return Icons.restaurant_outlined;
+    case HealthServiceStatus.completed:
+      return 'انجام شده';
 
-      case HealthServiceCategory.oralHealth:
-        return Icons.health_and_safety_outlined;
-    }
+    case HealthServiceStatus.information:
+      return 'اطلاعات و آموزش';
+  }
+}
+
+IconData _iconFor(
+  HealthServiceCategory category,
+) {
+  switch (category) {
+    case HealthServiceCategory.child:
+      return Icons.child_care_outlined;
+
+    case HealthServiceCategory.adolescent:
+      return Icons.school_outlined;
+
+    case HealthServiceCategory.youth:
+      return Icons.person_outline;
+
+    case HealthServiceCategory.elderly:
+      return Icons.elderly_outlined;
+
+    case HealthServiceCategory.periodicCare:
+      return Icons.monitor_heart_outlined;
+
+    case HealthServiceCategory.screening:
+      return Icons.search_rounded;
+
+    case HealthServiceCategory.vaccination:
+      return Icons.vaccines_outlined;
+
+    case HealthServiceCategory.women:
+      return Icons.woman_outlined;
+
+    case HealthServiceCategory.pregnancy:
+      return Icons.pregnant_woman_outlined;
+
+    case HealthServiceCategory.mentalHealth:
+      return Icons.psychology_outlined;
+
+    case HealthServiceCategory.nutrition:
+      return Icons.restaurant_outlined;
+
+    case HealthServiceCategory.oralHealth:
+      return Icons.health_and_safety_outlined;
   }
 }
