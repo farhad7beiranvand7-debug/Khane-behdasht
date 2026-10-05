@@ -27,7 +27,7 @@ jobs:
           clean: true
 
       # ============================================================
-      # 2. Java
+      # 2. Java 17
       # ============================================================
 
       - name: Set up Java 17
@@ -104,7 +104,6 @@ jobs:
               --project-name khane_behdasht \
               --org ir.khane.behdasht \
               --platforms android
-
           else
             echo "========================================"
             echo "ANDROID FOLDER EXISTS"
@@ -120,39 +119,168 @@ jobs:
           ls -la android/app
 
       # ============================================================
-      # 6. Check Android Gradle files
+      # 6. Configure Core Library Desugaring
       # ============================================================
 
-      - name: Check Android Gradle files
+      - name: Configure core library desugaring
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          groovy = Path("android/app/build.gradle")
+          kotlin = Path("android/app/build.gradle.kts")
+
+          if groovy.exists():
+              print("Using Groovy Gradle:")
+              print(groovy)
+
+              text = groovy.read_text(encoding="utf-8")
+
+              # ----------------------------------------------------
+              # Enable core library desugaring
+              # ----------------------------------------------------
+
+              if "coreLibraryDesugaringEnabled true" not in text:
+                  if "compileOptions {" in text:
+                      text = text.replace(
+                          "compileOptions {",
+                          """compileOptions {
+          coreLibraryDesugaringEnabled true""",
+                          1,
+                      )
+                  else:
+                      text = text.replace(
+                          "android {",
+                          """android {
+              compileOptions {
+                  coreLibraryDesugaringEnabled true
+              }""",
+                          1,
+                      )
+
+              # ----------------------------------------------------
+              # Add desugaring dependency
+              # ----------------------------------------------------
+
+              dependency = (
+                  "coreLibraryDesugaring "
+                  "'com.android.tools:desugar_jdk_libs:2.1.5'"
+              )
+
+              if dependency not in text:
+                  if "dependencies {" in text:
+                      text = text.replace(
+                          "dependencies {",
+                          """dependencies {
+              coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'""",
+                          1,
+                      )
+                  else:
+                      text += """
+          
+          dependencies {
+              coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+          }
+          """
+
+              groovy.write_text(
+                  text,
+                  encoding="utf-8",
+              )
+
+              print("===== FINAL build.gradle =====")
+              print(text)
+
+          elif kotlin.exists():
+              print("Using Kotlin Gradle DSL:")
+              print(kotlin)
+
+              text = kotlin.read_text(encoding="utf-8")
+
+              # ----------------------------------------------------
+              # Enable core library desugaring
+              # ----------------------------------------------------
+
+              if "isCoreLibraryDesugaringEnabled = true" not in text:
+                  if "compileOptions {" in text:
+                      text = text.replace(
+                          "compileOptions {",
+                          """compileOptions {
+          isCoreLibraryDesugaringEnabled = true""",
+                          1,
+                      )
+                  else:
+                      text = text.replace(
+                          "android {",
+                          """android {
+              compileOptions {
+                  isCoreLibraryDesugaringEnabled = true
+              }""",
+                          1,
+                      )
+
+              # ----------------------------------------------------
+              # Add desugaring dependency
+              # ----------------------------------------------------
+
+              dependency = (
+                  'coreLibraryDesugaring('
+                  '"com.android.tools:desugar_jdk_libs:2.1.5"'
+                  ')'
+              )
+
+              if dependency not in text:
+                  if "dependencies {" in text:
+                      text = text.replace(
+                          "dependencies {",
+                          """dependencies {
+              coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")""",
+                          1,
+                      )
+                  else:
+                      text += """
+          
+          dependencies {
+              coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+          }
+          """
+
+              kotlin.write_text(
+                  text,
+                  encoding="utf-8",
+              )
+
+              print("===== FINAL build.gradle.kts =====")
+              print(text)
+
+          else:
+              raise SystemExit(
+                  "ERROR: Neither android/app/build.gradle "
+                  "nor android/app/build.gradle.kts exists."
+              )
+          PY
+
+      # ============================================================
+      # 7. Verify Desugaring configuration
+      # ============================================================
+
+      - name: Verify desugaring configuration
         run: |
           echo "========================================"
-          echo "GRADLE FILES"
+          echo "VERIFY DESUGARING"
           echo "========================================"
 
-          find android -type f \
-            \( -name "*.gradle" \
-            -o -name "*.gradle.kts" \
-            -o -name "gradle-wrapper.properties" \) \
-            -print
-
-          echo ""
-          echo "===== APP BUILD FILES ====="
-
           if [ -f "android/app/build.gradle" ]; then
-            echo "Found: android/app/build.gradle"
-            cat android/app/build.gradle
+            grep -n "coreLibraryDesugaring" \
+              android/app/build.gradle || true
 
           elif [ -f "android/app/build.gradle.kts" ]; then
-            echo "Found: android/app/build.gradle.kts"
-            cat android/app/build.gradle.kts
-
-          else
-            echo "ERROR: No Android app Gradle file found."
-            exit 1
+            grep -n "coreLibraryDesugaring" \
+              android/app/build.gradle.kts || true
           fi
 
       # ============================================================
-      # 7. Clean
+      # 8. Clean
       # ============================================================
 
       - name: Flutter clean
@@ -162,7 +290,7 @@ jobs:
           rm -rf .dart_tool
 
       # ============================================================
-      # 8. Dependencies
+      # 9. Dependencies
       # ============================================================
 
       - name: Flutter pub get
@@ -170,7 +298,7 @@ jobs:
           flutter pub get
 
       # ============================================================
-      # 9. Analyze
+      # 10. Analyze
       # ============================================================
 
       - name: Flutter analyze
@@ -178,7 +306,7 @@ jobs:
           flutter analyze
 
       # ============================================================
-      # 10. Tests
+      # 11. Tests
       # ============================================================
 
       - name: Flutter tests
@@ -186,7 +314,7 @@ jobs:
           flutter test
 
       # ============================================================
-      # 11. Build APK
+      # 12. Build APK
       # ============================================================
 
       - name: Build Release APK
@@ -194,7 +322,7 @@ jobs:
           flutter build apk --release
 
       # ============================================================
-      # 12. Build AAB
+      # 13. Build AAB
       # ============================================================
 
       - name: Build Release AAB
@@ -202,7 +330,7 @@ jobs:
           flutter build appbundle --release
 
       # ============================================================
-      # 13. Check outputs
+      # 14. Check outputs
       # ============================================================
 
       - name: Check build outputs
@@ -229,7 +357,7 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk
 
       # ============================================================
-      # 14. Upload
+      # 15. Upload
       # ============================================================
 
       - name: Upload Android artifacts
