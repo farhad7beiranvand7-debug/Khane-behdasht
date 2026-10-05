@@ -38,13 +38,18 @@ void main() {
   );
 }
 
-بعد فقط Commit changes بزن و Workflow را اجرا کن.
+خیلی مهم
 
-این بار انتظار داریم:
+بعد از ذخیره، فایل باید دقیقاً ۳۳ خط یا کمتر باشد و بعد از آخرین "}" هیچ متن فارسی یا توضیحی نباشد.
 
-- "flutter analyze" ✅
-- هر ۱۵ تست یا بیشتر ✅
-- سپس "Build Release APK" اجرا شود
-- سپس "Build Release AAB" اجرا شود
+خطاهای:
 
-هیچ فایل دیگری را فعلاً تغییر نده.
+illegal_character
+non_constant_identifier_names
+missing function_parameters
+missing function_body
+172 issues found
+
+همه پیامد همان خراب شدن فایل از حوالی line 50 هستند، نه ۱۷۲ خطای واقعی.
+
+بعد Commit کن و دوباره Workflow را اجرا کن. اگر "Flutter analyze" سبز شد، دیگر فعلاً هیچ فایل دیگری را تغییر نده.
