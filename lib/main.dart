@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'presentation/pages/home_page.dart';
 
+// Re-export HomePage so existing tests/imports that use main.dart
+// can still access the application's real HomePage.
+export 'presentation/pages/home_page.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
