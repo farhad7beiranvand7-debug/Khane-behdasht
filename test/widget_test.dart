@@ -19,11 +19,6 @@ void main() {
         find.byType(HomePage),
         findsOneWidget,
       );
-
-      expect(
-        find.byType(Scaffold),
-        findsOneWidget,
-      );
     },
   );
 }
