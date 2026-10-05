@@ -16,14 +16,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ============================================================
+      # 1. Checkout
+      # ============================================================
+
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          clean: true
+
+      # ============================================================
+      # 2. Java
+      # ============================================================
 
       - name: Set up Java 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
+
+      # ============================================================
+      # 3. Flutter
+      # ============================================================
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -32,51 +47,190 @@ jobs:
           cache: false
 
       - name: Flutter version
-        run: flutter --version
-
-      - name: Check source
         run: |
-          echo "===== COMMIT ====="
+          flutter --version
+          dart --version
+
+      # ============================================================
+      # 4. Verify source
+      # ============================================================
+
+      - name: Verify source
+        run: |
+          echo "========================================"
+          echo "COMMIT"
+          echo "========================================"
           git rev-parse HEAD
 
-          echo "===== HOME PAGE ====="
-          if [ ! -f lib/presentation/pages/home_page.dart ]; then
+          echo "========================================"
+          echo "PROJECT ROOT"
+          echo "========================================"
+          pwd
+          ls -la
+
+          echo "========================================"
+          echo "HOME PAGE"
+          echo "========================================"
+
+          if [ ! -f "lib/presentation/pages/home_page.dart" ]; then
             echo "ERROR: home_page.dart not found"
             exit 1
           fi
 
           sha256sum lib/presentation/pages/home_page.dart
 
-          echo "===== HOME PAGE TEXT ====="
-          grep -n "دسترسی سریع" lib/presentation/pages/home_page.dart || true
-          grep -n "مراقبت‌های پیش رو" lib/presentation/pages/home_page.dart || true
-          grep -n "افراد تحت پوشش" lib/presentation/pages/home_page.dart || true
+          grep -n "دسترسی سریع" \
+            lib/presentation/pages/home_page.dart || true
+
+          grep -n "مراقبت‌های پیش رو" \
+            lib/presentation/pages/home_page.dart || true
+
+          grep -n "افراد تحت پوشش" \
+            lib/presentation/pages/home_page.dart || true
+
+      # ============================================================
+      # 5. Create Android platform if missing
+      # ============================================================
+
+      - name: Prepare Android platform
+        run: |
+          if [ ! -d "android" ]; then
+            echo "========================================"
+            echo "ANDROID FOLDER NOT FOUND"
+            echo "Creating Android platform..."
+            echo "========================================"
+
+            flutter create . \
+              --project-name khane_behdasht \
+              --org ir.khane.behdasht \
+              --platforms android
+
+          else
+            echo "========================================"
+            echo "ANDROID FOLDER EXISTS"
+            echo "========================================"
+          fi
+
+          echo ""
+          echo "===== ANDROID ROOT ====="
+          ls -la android
+
+          echo ""
+          echo "===== ANDROID APP ====="
+          ls -la android/app
+
+      # ============================================================
+      # 6. Check Android Gradle files
+      # ============================================================
+
+      - name: Check Android Gradle files
+        run: |
+          echo "========================================"
+          echo "GRADLE FILES"
+          echo "========================================"
+
+          find android -type f \
+            \( -name "*.gradle" \
+            -o -name "*.gradle.kts" \
+            -o -name "gradle-wrapper.properties" \) \
+            -print
+
+          echo ""
+          echo "===== APP BUILD FILES ====="
+
+          if [ -f "android/app/build.gradle" ]; then
+            echo "Found: android/app/build.gradle"
+            cat android/app/build.gradle
+
+          elif [ -f "android/app/build.gradle.kts" ]; then
+            echo "Found: android/app/build.gradle.kts"
+            cat android/app/build.gradle.kts
+
+          else
+            echo "ERROR: No Android app Gradle file found."
+            exit 1
+          fi
+
+      # ============================================================
+      # 7. Clean
+      # ============================================================
 
       - name: Flutter clean
-        run: flutter clean
+        run: |
+          flutter clean
+          rm -rf build
+          rm -rf .dart_tool
+
+      # ============================================================
+      # 8. Dependencies
+      # ============================================================
 
       - name: Flutter pub get
-        run: flutter pub get
+        run: |
+          flutter pub get
+
+      # ============================================================
+      # 9. Analyze
+      # ============================================================
 
       - name: Flutter analyze
-        run: flutter analyze
+        run: |
+          flutter analyze
+
+      # ============================================================
+      # 10. Tests
+      # ============================================================
 
       - name: Flutter tests
-        run: flutter test
+        run: |
+          flutter test
+
+      # ============================================================
+      # 11. Build APK
+      # ============================================================
 
       - name: Build Release APK
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release
+
+      # ============================================================
+      # 12. Build AAB
+      # ============================================================
 
       - name: Build Release AAB
-        run: flutter build appbundle --release
+        run: |
+          flutter build appbundle --release
+
+      # ============================================================
+      # 13. Check outputs
+      # ============================================================
 
       - name: Check build outputs
         run: |
-          echo "===== APK ====="
+          echo "========================================"
+          echo "APK"
+          echo "========================================"
+
           ls -lh build/app/outputs/flutter-apk/
 
-          echo "===== AAB ====="
+          echo ""
+          echo "========================================"
+          echo "AAB"
+          echo "========================================"
+
           ls -lh build/app/outputs/bundle/release/
+
+          echo ""
+          echo "========================================"
+          echo "APK SHA256"
+          echo "========================================"
+
+          sha256sum \
+            build/app/outputs/flutter-apk/app-release.apk
+
+      # ============================================================
+      # 14. Upload
+      # ============================================================
 
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
