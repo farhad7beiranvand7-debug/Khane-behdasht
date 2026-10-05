@@ -1,447 +1,89 @@
 name: Build Android Release
 
 on:
-push:
-branches:
-- main
-- master
-workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
 
 permissions:
-contents: read
+  contents: read
 
 jobs:
-build:
-name: Build Android APK and AAB
-runs-on: ubuntu-latest
-
-steps:
-  # ============================================================
-  # 1. دریافت دقیق آخرین کد GitHub
-  # ============================================================
-
-  - name: Checkout repository
-    uses: actions/checkout@v4
-    with:
-      fetch-depth: 0
-      clean: true
-
-  # ============================================================
-  # 2. نمایش دقیق Commit و وضعیت پروژه
-  # ============================================================
-
-  - name: Verify source code
-    run: |
-      echo "========================================"
-      echo "CURRENT COMMIT"
-      echo "========================================"
-      git rev-parse HEAD
-
-      echo "========================================"
-      echo "BRANCH"
-      echo "========================================"
-      git branch --show-current
-
-      echo "========================================"
-      echo "GIT STATUS"
-      echo "========================================"
-      git status --short
-
-      echo "========================================"
-      echo "PROJECT ROOT"
-      echo "========================================"
-      pwd
-      ls -la
-
-      echo "========================================"
-      echo "HOME PAGE LOCATION"
-      echo "========================================"
-
-      find . -type f \
-        -path "*presentation/pages/home_page.dart" \
-        -print
-
-  # ============================================================
-  # 3. نمایش HomePage واقعی که قرار است Build شود
-  # ============================================================
-
-  - name: Verify HomePage source
-    run: |
-      echo "========================================"
-      echo "HOME PAGE SOURCE"
-      echo "========================================"
-
-      if [ ! -f "lib/presentation/pages/home_page.dart" ]; then
-        echo "ERROR: lib/presentation/pages/home_page.dart NOT FOUND"
-        exit 1
-      fi
-
-      echo "FILE:"
-      realpath lib/presentation/pages/home_page.dart
-
-      echo "----------------------------------------"
-      echo "FIRST 80 LINES"
-      echo "----------------------------------------"
-
-      sed -n '1,80p' lib/presentation/pages/home_page.dart
-
-      echo "----------------------------------------"
-      echo "SEARCH FOR NEW UI TEXT"
-      echo "----------------------------------------"
-
-      grep -n \
-        -E "دسترسی سریع|مراقبت‌های پیش رو|افراد تحت پوشش|واکسیناسیون|سلامت روان" \
-        lib/presentation/pages/home_page.dart || true
-
-  # ============================================================
-  # 4. Java
-  # ============================================================
-
-  - name: Set up Java 17
-    uses: actions/setup-java@v5
-    with:
-      distribution: temurin
-      java-version: '17'
-
-  # ============================================================
-  # 5. Python
-  # ============================================================
-
-  - name: Set up Python
-    uses: actions/setup-python@v5
-    with:
-      python-version: '3.x'
-
-  - name: Install Python dependencies
-    run: |
-      python -m pip install --upgrade pip
-      python -m pip install pillow
-
-  # ============================================================
-  # 6. Flutter
-  # ============================================================
-
-  - name: Set up Flutter
-    uses: subosito/flutter-action@v2
-    with:
-      channel: stable
-      cache: false
-
-  - name: Flutter version
-    run: |
-      flutter --version
-      dart --version
-
-  # ============================================================
-  # 7. بررسی pubspec
-  # ============================================================
-
-  - name: Inspect pubspec
-    run: |
-      echo "========================================"
-      echo "PUBSPEC"
-      echo "========================================"
-
-      cat pubspec.yaml
-
-  # ============================================================
-  # 8. نام پکیج
-  # ============================================================
-
-  - name: Fix Dart package name
-    run: |
-      python3 - <<'PY'
-      from pathlib import Path
-
-      path = Path("pubspec.yaml")
-
-      text = path.read_text(encoding="utf-8")
-
-      lines = text.splitlines()
-
-      found = False
-
-      for i, line in enumerate(lines):
-          if line.startswith("name:"):
-              lines[i] = "name: khane_behdasht"
-              found = True
-              break
-
-      if not found:
-          raise SystemExit(
-              "ERROR: name field not found in pubspec.yaml"
-          )
-
-      path.write_text(
-          "\n".join(lines) + "\n",
-          encoding="utf-8",
-      )
-
-      print(path.read_text(encoding="utf-8"))
-      PY
-
-  # ============================================================
-  # 9. Android
-  # ============================================================
-
-  - name: Prepare Android platform
-    run: |
-      if [ ! -d "android" ]; then
-        echo "Android folder does not exist."
-        echo "Creating Android platform..."
-
-        flutter create . \
-          --project-name khane_behdasht \
-          --org ir.khane.behdasht \
-          --platforms android
-      else
-        echo "Android folder already exists."
-      fi
-
-  # ============================================================
-  # 10. تنظیم Desugaring
-  # ============================================================
-
-  - name: Configure core library desugaring
-    run: |
-      python3 - <<'PY'
-      from pathlib import Path
-
-      groovy = Path("android/app/build.gradle")
-      kotlin = Path("android/app/build.gradle.kts")
-
-      if groovy.exists():
-
-          text = groovy.read_text(encoding="utf-8")
-
-          if "coreLibraryDesugaringEnabled true" not in text:
-
-              if "compileOptions {" in text:
-                  text = text.replace(
-                      "compileOptions {",
-                      "compileOptions {\n"
-                      "        coreLibraryDesugaringEnabled true",
-                      1,
-                  )
-              else:
-                  text = text.replace(
-                      "android {",
-                      "android {\n"
-                      "    compileOptions {\n"
-                      "        coreLibraryDesugaringEnabled true\n"
-                      "    }",
-                      1,
-                  )
-
-          dependency = (
-              "coreLibraryDesugaring "
-              "'com.android.tools:desugar_jdk_libs:2.1.5'"
-          )
-
-          if dependency not in text:
-
-              if "dependencies {" in text:
-                  text = text.replace(
-                      "dependencies {",
-                      "dependencies {\n        " + dependency,
-                      1,
-                  )
-              else:
-                  text += (
-                      "\n\ndependencies {\n"
-                      "    " + dependency + "\n"
-                      "}\n"
-                  )
-
-          groovy.write_text(
-              text,
-              encoding="utf-8",
-          )
-
-          print(text)
-
-      elif kotlin.exists():
-
-          text = kotlin.read_text(encoding="utf-8")
-
-          if "isCoreLibraryDesugaringEnabled = true" not in text:
-
-              if "compileOptions {" in text:
-                  text = text.replace(
-                      "compileOptions {",
-                      "compileOptions {\n"
-                      "        isCoreLibraryDesugaringEnabled = true",
-                      1,
-                  )
-              else:
-                  text = text.replace(
-                      "android {",
-                      "android {\n"
-                      "    compileOptions {\n"
-                      "        isCoreLibraryDesugaringEnabled = true\n"
-                      "    }",
-                      1,
-                  )
-
-          dependency = (
-              'coreLibraryDesugaring('
-              '"com.android.tools:desugar_jdk_libs:2.1.5"'
-              ')'
-          )
-
-          if dependency not in text:
-
-              if "dependencies {" in text:
-                  text = text.replace(
-                      "dependencies {",
-                      "dependencies {\n        " + dependency,
-                      1,
-                  )
-              else:
-                  text += (
-                      "\n\ndependencies {\n"
-                      "    " + dependency + "\n"
-                      "}\n"
-                  )
-
-          kotlin.write_text(
-              text,
-              encoding="utf-8",
-          )
-
-          print(text)
-
-      else:
-          raise SystemExit(
-              "ERROR: Android Gradle file not found."
-          )
-      PY
-
-  # ============================================================
-  # 11. Icon
-  # ============================================================
-
-  - name: Generate application icon
-    run: |
-      if [ -f "tool/create_icon.py" ]; then
-        python3 tool/create_icon.py
-      else
-        echo "create_icon.py not found."
-      fi
-
-  # ============================================================
-  # 12. پاک کردن کامل خروجی‌ها و Cacheهای Flutter
-  # ============================================================
-
-  - name: Clean Flutter project
-    run: |
-      flutter clean
-
-      rm -rf build
-      rm -rf .dart_tool
-
-      echo "Clean completed."
-
-  # ============================================================
-  # 13. Dependencies
-  # ============================================================
-
-  - name: Flutter pub get
-    run: |
-      flutter pub get
-
-  # ============================================================
-  # 14. دوباره تأیید HomePage بعد از pub get
-  # ============================================================
-
-  - name: Verify source before analyze
-    run: |
-      echo "========================================"
-      echo "VERIFYING HOME PAGE BEFORE BUILD"
-      echo "========================================"
-
-      grep -n \
-        -E "دسترسی سریع|مراقبت‌های پیش رو|افراد تحت پوشش|واکسیناسیون|سلامت روان" \
-        lib/presentation/pages/home_page.dart || true
-
-  # ============================================================
-  # 15. Analyze
-  # ============================================================
-
-  - name: Flutter analyze
-    run: |
-      flutter analyze
-
-  # ============================================================
-  # 16. Tests
-  # ============================================================
-
-  - name: Flutter tests
-    run: |
-      flutter test
-
-  # ============================================================
-  # 17. Build APK
-  # ============================================================
-
-  - name: Build Release APK
-    run: |
-      flutter build apk \
-        --release \
-        --no-tree-shake-icons
-
-  # ============================================================
-  # 18. Build AAB
-  # ============================================================
-
-  - name: Build Release AAB
-    run: |
-      flutter build appbundle \
-        --release \
-        --no-tree-shake-icons
-
-  # ============================================================
-  # 19. بررسی خروجی
-  # ============================================================
-
-  - name: Check build outputs
-    run: |
-      echo "========================================"
-      echo "APK"
-      echo "========================================"
-
-      ls -lh build/app/outputs/flutter-apk/
-
-      echo "========================================"
-      echo "AAB"
-      echo "========================================"
-
-      ls -lh build/app/outputs/bundle/release/
-
-      echo "========================================"
-      echo "APK SHA256"
-      echo "========================================"
-
-      sha256sum \
-        build/app/outputs/flutter-apk/app-release.apk
-
-      echo "========================================"
-      echo "AAB SHA256"
-      echo "========================================"
-
-      sha256sum \
-        build/app/outputs/bundle/release/app-release.aab
-
-  # ============================================================
-  # 20. Upload
-  # ============================================================
-
-  - name: Upload Android artifacts
-    uses: actions/upload-artifact@v4
-    with:
-      name: khane-behdasht-android-release
-      path: |
-        build/app/outputs/flutter-apk/app-release.apk
-        build/app/outputs/bundle/release/app-release.aab
-      if-no-files-found: error
-      retention-days: 30
+  build:
+    name: Build Android APK and AAB
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: false
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Check source
+        run: |
+          echo "===== COMMIT ====="
+          git rev-parse HEAD
+
+          echo "===== HOME PAGE ====="
+          if [ ! -f lib/presentation/pages/home_page.dart ]; then
+            echo "ERROR: home_page.dart not found"
+            exit 1
+          fi
+
+          sha256sum lib/presentation/pages/home_page.dart
+
+          echo "===== HOME PAGE TEXT ====="
+          grep -n "دسترسی سریع" lib/presentation/pages/home_page.dart || true
+          grep -n "مراقبت‌های پیش رو" lib/presentation/pages/home_page.dart || true
+          grep -n "افراد تحت پوشش" lib/presentation/pages/home_page.dart || true
+
+      - name: Flutter clean
+        run: flutter clean
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Flutter analyze
+        run: flutter analyze
+
+      - name: Flutter tests
+        run: flutter test
+
+      - name: Build Release APK
+        run: flutter build apk --release
+
+      - name: Build Release AAB
+        run: flutter build appbundle --release
+
+      - name: Check build outputs
+        run: |
+          echo "===== APK ====="
+          ls -lh build/app/outputs/flutter-apk/
+
+          echo "===== AAB ====="
+          ls -lh build/app/outputs/bundle/release/
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: khane-behdasht-android-release-${{ github.sha }}
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30
