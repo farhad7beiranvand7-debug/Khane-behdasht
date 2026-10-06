@@ -14,9 +14,6 @@ final Person person;
 
 static const _background = Color(0xFFF9FBF7);
 static const _text = Color(0xFF344054);
-static const _muted = Color(0xFF667085);
-static const _darkGreen = Color(0xFF527A18);
-static const _green = Color(0xFFA6E22E);
 
 @override
 Widget build(BuildContext context) {
@@ -58,11 +55,8 @@ return Scaffold(
       children: [
         _PersonHeader(person: person),
         const SizedBox(height: 22),
-
         if (important.isNotEmpty) ...[
-          const _SectionTitle(
-            title: 'خدمات مورد نیاز',
-          ),
+          const _SectionTitle(title: 'خدمات مورد نیاز'),
           const SizedBox(height: 10),
           ...important.map(
             (service) => Padding(
@@ -84,12 +78,9 @@ return Scaffold(
             ),
           ),
         ],
-
         if (other.isNotEmpty) ...[
           const SizedBox(height: 12),
-          const _SectionTitle(
-            title: 'سایر خدمات',
-          ),
+          const _SectionTitle(title: 'سایر خدمات'),
           const SizedBox(height: 10),
           ...other.map(
             (service) => Padding(
@@ -111,9 +102,7 @@ return Scaffold(
             ),
           ),
         ],
-
-        if (services.isEmpty)
-          const _EmptyServices(),
+        if (services.isEmpty) const _EmptyServices(),
       ],
     ),
   ),
@@ -189,7 +178,6 @@ return Scaffold(
               ),
             ),
             const SizedBox(height: 18),
-
             Text(
               service.title,
               style: const TextStyle(
@@ -198,9 +186,7 @@ return Scaffold(
                 fontWeight: FontWeight.w800,
               ),
             ),
-
             const SizedBox(height: 7),
-
             Text(
               person.fullName,
               style: const TextStyle(
@@ -208,31 +194,24 @@ return Scaffold(
                 fontSize: 14,
               ),
             ),
-
             const SizedBox(height: 20),
-
-            if (schedule != null) ...[
+            if (schedule != null)
               _ScheduleCard(
                 schedule: schedule,
                 isVaccination: isVaccination,
                 isPregnancy: isPregnancy,
-              ),
-              const SizedBox(height: 20),
-            ] else ...[
+              )
+            else
               _NoDateCard(
                 isPregnancy: isPregnancy,
                 isVaccination: isVaccination,
               ),
-              const SizedBox(height: 20),
-            ],
-
+            const SizedBox(height: 20),
             const Divider(
               height: 1,
               color: Color(0xFFEAECF0),
             ),
-
             const SizedBox(height: 18),
-
             Text(
               service.description,
               style: const TextStyle(
@@ -308,15 +287,15 @@ borderRadius: BorderRadius.circular(18),
 child: Column(
 crossAxisAlignment: CrossAxisAlignment.start,
 children: [
-Row(
+const Row(
 children: [
-const Icon(
+Icon(
 Icons.event_available_outlined,
 color: _darkGreen,
 size: 23,
 ),
-const SizedBox(width: 9),
-const Text(
+SizedBox(width: 9),
+Text(
 'موعد برنامه‌ای',
 style: TextStyle(
 color: _darkGreen,
@@ -327,63 +306,51 @@ fontWeight: FontWeight.w700,
 ],
 ),
 const SizedBox(height: 12),
-
-      Text(
-        _formatDate(schedule.date),
-        style: const TextStyle(
-          color: _text,
-          fontSize: 22,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-
-      const SizedBox(height: 8),
-
-      Text(
-        schedule.title,
-        style: const TextStyle(
-          color: _text,
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-
-      const SizedBox(height: 5),
-
-      Text(
-        schedule.description,
-        style: const TextStyle(
-          color: _muted,
-          fontSize: 12,
-          height: 1.7,
-        ),
-      ),
-
-      if (isVaccination) ...[
-        const SizedBox(height: 12),
-        const _SmallInfo(
-          icon: Icons.vaccines_outlined,
-          title: 'نوع خدمت',
-          value: 'واکسیناسیون برنامه‌ای',
-        ),
-      ],
-
-      if (isPregnancy) ...[
-        const SizedBox(height: 12),
-        const _SmallInfo(
-          icon: Icons.pregnant_woman_outlined,
-          title: 'نوع خدمت',
-          value: 'مراقبت دوران بارداری',
-        ),
-      ],
-    ],
-  ),
+Text(
+schedule.date.toString(),
+style: const TextStyle(
+color: _text,
+fontSize: 22,
+fontWeight: FontWeight.w800,
+),
+),
+const SizedBox(height: 8),
+Text(
+schedule.title,
+style: const TextStyle(
+color: _text,
+fontSize: 15,
+fontWeight: FontWeight.w700,
+),
+),
+const SizedBox(height: 5),
+Text(
+schedule.description,
+style: const TextStyle(
+color: _muted,
+fontSize: 12,
+height: 1.7,
+),
+),
+if (isVaccination) ...[
+const SizedBox(height: 12),
+const _SmallInfo(
+icon: Icons.vaccines_outlined,
+title: 'نوع خدمت',
+value: 'واکسیناسیون برنامه‌ای',
+),
+],
+if (isPregnancy) ...[
+const SizedBox(height: 12),
+const _SmallInfo(
+icon: Icons.pregnant_woman_outlined,
+title: 'نوع خدمت',
+value: 'مراقبت دوران بارداری',
+),
+],
+],
+),
 );
-
-}
-
-String _formatDate(dynamic date) {
-return date.toString();
 }
 }
 
@@ -462,7 +429,6 @@ final String value;
 
 static const _darkGreen = Color(0xFF527A18);
 static const _text = Color(0xFF344054);
-static const _muted = Color(0xFF667085);
 
 @override
 Widget build(BuildContext context) {
@@ -476,26 +442,25 @@ size: 19,
 ),
 const SizedBox(width: 8),
 Expanded(
-child: RichText(
-text: const TextSpan(
-children: [],
-),
-),
-),
-Text(
-'$title: ',
+child: Text.rich(
+TextSpan(
+children: [
+TextSpan(
+text: '$title: ',
 style: const TextStyle(
-color: _muted,
+color: Color(0xFF667085),
 fontSize: 12,
 ),
 ),
-Flexible(
-child: Text(
-value,
+TextSpan(
+text: value,
 style: const TextStyle(
 color: _text,
 fontSize: 12,
 fontWeight: FontWeight.w700,
+),
+),
+],
 ),
 ),
 ),
@@ -751,8 +716,4 @@ fontWeight: FontWeight.w600,
 ),
 );
 }
-}
-
-String _formatJalaliDate(int year, int month, int day) {
-return '$year/${month.toString().padLeft(2, '0')}/${day.toString().padLeft(2, '0')}';
 }
