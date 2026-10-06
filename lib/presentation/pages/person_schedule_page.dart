@@ -12,11 +12,8 @@ class PersonSchedulePage extends StatelessWidget {
 
   final Person person;
 
-  static const _green = Color(0xFFA6E22E);
-  static const _darkGreen = Color(0xFF527A18);
   static const _background = Color(0xFFF9FBF7);
   static const _text = Color(0xFF344054);
-  static const _muted = Color(0xFF667085);
 
   @override
   Widget build(BuildContext context) {
