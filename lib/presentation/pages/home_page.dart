@@ -98,8 +98,14 @@ class _HomePageState extends State<HomePage> {
                 color: _green,
                 onRefresh: _load,
                 child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 30),
+                  physics:
+                      const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    4,
+                    16,
+                    30,
+                  ),
                   children: [
                     _AddMemberButton(
                       onTap: _addMember,
@@ -114,10 +120,14 @@ class _HomePageState extends State<HomePage> {
                     else
                       ..._members.map(
                         (member) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
+                          padding:
+                              const EdgeInsets.only(
+                            bottom: 8,
+                          ),
                           child: _MemberTile(
                             member: member,
-                            onTap: () => _openMember(member),
+                            onTap: () =>
+                                _openMember(member),
                           ),
                         ),
                       ),
@@ -129,13 +139,17 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(height: 10),
                       ..._familyTasks().map(
                         (task) => Padding(
-                          padding: const EdgeInsets.only(bottom: 7),
+                          padding:
+                              const EdgeInsets.only(
+                            bottom: 7,
+                          ),
                           child: _TaskTile(
                             task: task,
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) => ServiceDetailPage(
+                                  builder: (_) =>
+                                      ServiceDetailPage(
                                     person: task.member,
                                     service: task.service,
                                   ),
@@ -176,12 +190,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   bool _showOnHome(HealthService service) {
-    if (service.category == HealthServiceCategory.vaccination) {
+    if (service.category ==
+        HealthServiceCategory.vaccination) {
       return service.shortTitle.contains('کودک') ||
-          service.title.contains('کودک');
+          service.title.contains('کودک') ||
+          service.shortTitle == 'واکسیناسیون' ||
+          service.title == 'واکسیناسیون';
     }
 
-    if (service.id.toLowerCase().contains('vaccine_status')) {
+    if (service.id
+        .toLowerCase()
+        .contains('vaccine_status')) {
       return false;
     }
 
@@ -190,13 +209,10 @@ class _HomePageState extends State<HomePage> {
       return false;
     }
 
-    if (service.shortTitle == 'واکسیناسیون' ||
-        service.title == 'واکسیناسیون') {
-      return false;
-    }
-
-    return service.status == HealthServiceStatus.action ||
-        service.status == HealthServiceStatus.upcoming;
+    return service.status ==
+            HealthServiceStatus.action ||
+        service.status ==
+            HealthServiceStatus.upcoming;
   }
 }
 
@@ -231,7 +247,8 @@ class _AddMemberButton extends StatelessWidget {
             vertical: 14,
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment:
+                MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.person_add_alt_1_rounded,
@@ -317,7 +334,8 @@ class _MemberTile extends StatelessWidget {
               const SizedBox(width: 11),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     Text(
                       member.fullName,
@@ -328,11 +346,12 @@ class _MemberTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    const Text(
-                      'مشاهده خدمات سلامت',
-                      style: TextStyle(
-                        color: Color(0xFF667085),
-                        fontSize: 11.5,
+                    Text(
+                      member.birthDate.exactAge(),
+                      style: const TextStyle(
+                        color: Color(0xFF527A18),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -418,7 +437,9 @@ class _TaskTile extends StatelessWidget {
     );
   }
 
-  IconData _iconFor(HealthServiceCategory category) {
+  IconData _iconFor(
+    HealthServiceCategory category,
+  ) {
     switch (category) {
       case HealthServiceCategory.vaccination:
         return Icons.vaccines_outlined;
