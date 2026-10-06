@@ -6,6 +6,7 @@ import '../../domain/models/health_service.dart';
 import '../../domain/models/person.dart';
 import 'health_services_page.dart';
 import 'member_form_page.dart';
+import 'person_schedule_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -78,6 +79,19 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute(
         builder: (_) => HealthServicesPage(
           person: member,
+        ),
+      ),
+    );
+
+    await _load();
+  }
+
+  Future<void> _openTask(_FamilyTask task) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ServiceDetailPage(
+          person: task.member,
+          service: task.service,
         ),
       ),
     );
@@ -184,7 +198,7 @@ class _HomePageState extends State<HomePage> {
                           padding: const EdgeInsets.only(bottom: 8),
                           child: _TaskTile(
                             task: task,
-                            onTap: () => _openMember(task.member),
+                            onTap: () => _openTask(task),
                           ),
                         ),
                       ),
