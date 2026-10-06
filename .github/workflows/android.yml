@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       # ============================================================
       # 1. Checkout
       # ============================================================
@@ -68,26 +69,6 @@ jobs:
           pwd
           ls -la
 
-          echo "========================================"
-          echo "HOME PAGE"
-          echo "========================================"
-
-          if [ ! -f "lib/presentation/pages/home_page.dart" ]; then
-            echo "ERROR: home_page.dart not found"
-            exit 1
-          fi
-
-          sha256sum lib/presentation/pages/home_page.dart
-
-          grep -n "دسترسی سریع" \
-            lib/presentation/pages/home_page.dart || true
-
-          grep -n "مراقبت‌های پیش رو" \
-            lib/presentation/pages/home_page.dart || true
-
-          grep -n "افراد تحت پوشش" \
-            lib/presentation/pages/home_page.dart || true
-
       # ============================================================
       # 5. Create Android platform if missing
       # ============================================================
@@ -95,19 +76,15 @@ jobs:
       - name: Prepare Android platform
         run: |
           if [ ! -d "android" ]; then
-            echo "========================================"
-            echo "ANDROID FOLDER NOT FOUND"
+            echo "Android folder not found."
             echo "Creating Android platform..."
-            echo "========================================"
 
             flutter create . \
               --project-name khane_behdasht \
               --org ir.khane.behdasht \
               --platforms android
           else
-            echo "========================================"
-            echo "ANDROID FOLDER EXISTS"
-            echo "========================================"
+            echo "Android folder already exists."
           fi
 
           echo ""
@@ -119,7 +96,7 @@ jobs:
           ls -la android/app
 
       # ============================================================
-      # 6. Configure Core Library Desugaring
+      # 6. Configure core library desugaring
       # ============================================================
 
       - name: Configure core library desugaring
@@ -131,21 +108,16 @@ jobs:
           kotlin = Path("android/app/build.gradle.kts")
 
           if groovy.exists():
-              print("Using Groovy Gradle:")
-              print(groovy)
 
               text = groovy.read_text(encoding="utf-8")
 
-              # ----------------------------------------------------
-              # Enable core library desugaring
-              # ----------------------------------------------------
-
               if "coreLibraryDesugaringEnabled true" not in text:
+
                   if "compileOptions {" in text:
                       text = text.replace(
                           "compileOptions {",
                           """compileOptions {
-          coreLibraryDesugaringEnabled true""",
+              coreLibraryDesugaringEnabled true""",
                           1,
                       )
                   else:
@@ -158,16 +130,13 @@ jobs:
                           1,
                       )
 
-              # ----------------------------------------------------
-              # Add desugaring dependency
-              # ----------------------------------------------------
-
               dependency = (
                   "coreLibraryDesugaring "
                   "'com.android.tools:desugar_jdk_libs:2.1.5'"
               )
 
               if dependency not in text:
+
                   if "dependencies {" in text:
                       text = text.replace(
                           "dependencies {",
@@ -177,7 +146,7 @@ jobs:
                       )
                   else:
                       text += """
-          
+
           dependencies {
               coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
           }
@@ -188,25 +157,19 @@ jobs:
                   encoding="utf-8",
               )
 
-              print("===== FINAL build.gradle =====")
-              print(text)
+              print("Updated build.gradle.")
 
           elif kotlin.exists():
-              print("Using Kotlin Gradle DSL:")
-              print(kotlin)
 
               text = kotlin.read_text(encoding="utf-8")
 
-              # ----------------------------------------------------
-              # Enable core library desugaring
-              # ----------------------------------------------------
-
               if "isCoreLibraryDesugaringEnabled = true" not in text:
+
                   if "compileOptions {" in text:
                       text = text.replace(
                           "compileOptions {",
                           """compileOptions {
-          isCoreLibraryDesugaringEnabled = true""",
+              isCoreLibraryDesugaringEnabled = true""",
                           1,
                       )
                   else:
@@ -219,10 +182,6 @@ jobs:
                           1,
                       )
 
-              # ----------------------------------------------------
-              # Add desugaring dependency
-              # ----------------------------------------------------
-
               dependency = (
                   'coreLibraryDesugaring('
                   '"com.android.tools:desugar_jdk_libs:2.1.5"'
@@ -230,6 +189,7 @@ jobs:
               )
 
               if dependency not in text:
+
                   if "dependencies {" in text:
                       text = text.replace(
                           "dependencies {",
@@ -239,7 +199,7 @@ jobs:
                       )
                   else:
                       text += """
-          
+
           dependencies {
               coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
           }
@@ -250,37 +210,16 @@ jobs:
                   encoding="utf-8",
               )
 
-              print("===== FINAL build.gradle.kts =====")
-              print(text)
+              print("Updated build.gradle.kts.")
 
           else:
               raise SystemExit(
-                  "ERROR: Neither android/app/build.gradle "
-                  "nor android/app/build.gradle.kts exists."
+                  "Neither build.gradle nor build.gradle.kts exists."
               )
           PY
 
       # ============================================================
-      # 7. Verify Desugaring configuration
-      # ============================================================
-
-      - name: Verify desugaring configuration
-        run: |
-          echo "========================================"
-          echo "VERIFY DESUGARING"
-          echo "========================================"
-
-          if [ -f "android/app/build.gradle" ]; then
-            grep -n "coreLibraryDesugaring" \
-              android/app/build.gradle || true
-
-          elif [ -f "android/app/build.gradle.kts" ]; then
-            grep -n "coreLibraryDesugaring" \
-              android/app/build.gradle.kts || true
-          fi
-
-      # ============================================================
-      # 8. Clean
+      # 7. Clean
       # ============================================================
 
       - name: Flutter clean
@@ -290,7 +229,7 @@ jobs:
           rm -rf .dart_tool
 
       # ============================================================
-      # 9. Dependencies
+      # 8. Dependencies
       # ============================================================
 
       - name: Flutter pub get
@@ -298,7 +237,77 @@ jobs:
           flutter pub get
 
       # ============================================================
-      # 10. Analyze
+      # 9. CREATE OUR APP ICON
+      # ============================================================
+
+      - name: Generate launcher icon
+        run: |
+          echo "========================================"
+          echo "GENERATING KHANE BEHDASHT ICON"
+          echo "========================================"
+
+          python3 -m pip install --quiet Pillow
+
+          python3 tool/create_icon.py
+
+          echo ""
+          echo "========================================"
+          echo "CHECK GENERATED MASTER ICON"
+          echo "========================================"
+
+          ls -lh tool/icon.png
+
+          python3 - <<'PY'
+          from PIL import Image
+
+          image = Image.open("tool/icon.png")
+
+          print("Icon size:", image.size)
+          print("Icon mode:", image.mode)
+
+          if image.size != (1024, 1024):
+              raise SystemExit(
+                  "ERROR: Icon must be 1024x1024."
+              )
+          PY
+
+          echo ""
+          echo "========================================"
+          echo "CHECK ANDROID ICONS"
+          echo "========================================"
+
+          find android/app/src/main/res \
+            -type f \
+            \( \
+              -name "ic_launcher.png" \
+              -o \
+              -name "ic_launcher_round.png" \
+            \) \
+            -print
+
+      # ============================================================
+      # 10. Verify source
+      # ============================================================
+
+      - name: Verify launcher configuration
+        run: |
+          echo "========================================"
+          echo "ANDROID MANIFEST"
+          echo "========================================"
+
+          grep -n "android:icon" \
+            android/app/src/main/AndroidManifest.xml || true
+
+          echo ""
+          echo "========================================"
+          echo "ANDROID ROUND ICON"
+          echo "========================================"
+
+          grep -n "android:roundIcon" \
+            android/app/src/main/AndroidManifest.xml || true
+
+      # ============================================================
+      # 11. Analyze
       # ============================================================
 
       - name: Flutter analyze
@@ -306,7 +315,7 @@ jobs:
           flutter analyze
 
       # ============================================================
-      # 11. Tests
+      # 12. Tests
       # ============================================================
 
       - name: Flutter tests
@@ -314,7 +323,7 @@ jobs:
           flutter test
 
       # ============================================================
-      # 12. Build APK
+      # 13. Build APK
       # ============================================================
 
       - name: Build Release APK
@@ -322,7 +331,7 @@ jobs:
           flutter build apk --release
 
       # ============================================================
-      # 13. Build AAB
+      # 14. Build AAB
       # ============================================================
 
       - name: Build Release AAB
@@ -330,7 +339,7 @@ jobs:
           flutter build appbundle --release
 
       # ============================================================
-      # 14. Check outputs
+      # 15. Check outputs
       # ============================================================
 
       - name: Check build outputs
@@ -357,7 +366,7 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk
 
       # ============================================================
-      # 15. Upload
+      # 16. Upload artifacts
       # ============================================================
 
       - name: Upload Android artifacts
