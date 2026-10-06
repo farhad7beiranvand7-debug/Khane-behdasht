@@ -5,367 +5,720 @@ import '../../domain/models/health_service.dart';
 import '../../domain/models/person.dart';
 
 class HealthServicesPage extends StatelessWidget {
-const HealthServicesPage({
-super.key,
-required this.person,
-});
+  const HealthServicesPage({
+    super.key,
+    required this.person,
+  });
 
-final Person person;
+  final Person person;
 
-@override
-Widget build(BuildContext context) {
-const engine = HealthServiceEngine();
+  @override
+  Widget build(BuildContext context) {
+    const engine = HealthServiceEngine();
 
-final services = engine.servicesFor(person);
+    final services = engine.servicesFor(person);
 
-final important = services
-    .where(
-      (service) =>
-          service.status == HealthServiceStatus.action ||
-          service.status == HealthServiceStatus.upcoming,
-    )
-    .toList();
+    final upcoming = services
+        .where(
+          (service) =>
+              service.status == HealthServiceStatus.action ||
+              service.status == HealthServiceStatus.upcoming,
+        )
+        .toList();
 
-const categories = <HealthServiceCategory>[
-  HealthServiceCategory.child,
-  HealthServiceCategory.adolescent,
-  HealthServiceCategory.youth,
-  HealthServiceCategory.elderly,
-  HealthServiceCategory.periodicCare,
-  HealthServiceCategory.screening,
-  HealthServiceCategory.vaccination,
-  HealthServiceCategory.women,
-  HealthServiceCategory.pregnancy,
-  HealthServiceCategory.mentalHealth,
-  HealthServiceCategory.nutrition,
-  HealthServiceCategory.oralHealth,
-];
+    final grouped = <HealthServiceCategory, List<HealthService>>{};
 
-return Scaffold(
-  appBar: AppBar(
-    title: const Text('مراقبت‌های سلامت'),
-  ),
-  body: ListView(
-    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-    children: [
-      _PersonHeader(person: person),
+    for (final service in services) {
+      grouped.putIfAbsent(service.category, () => []).add(service);
+    }
 
-      const SizedBox(height: 20),
-
-      if (important.isNotEmpty)
-        _ImportantCard(services: important),
-
-      const SizedBox(height: 20),
-
-      Text(
-        'خدمات مربوط به شما',
-        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-      ),
-
-      const SizedBox(height: 6),
-
-      const Text(
-        'برنامه بر اساس سن، جنسیت و شرایط ثبت‌شده، موارد مرتبط را نمایش می‌دهد.',
-      ),
-
-      const SizedBox(height: 16),
-
-      for (final category in categories)
-        _CategoryCard(
-          category: category,
-          services: services
-              .where(
-                (service) => service.category == category,
-              )
-              .toList(),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F9F6),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF7F9F6),
+        foregroundColor: const Color(0xFF263238),
+        elevation: 0,
+        title: const Text(
+          'مراقبت‌های سلامت',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
         ),
-
-      const SizedBox(height: 12),
-
-      const Text(
-        'توجه: زمان و نوع بعضی خدمات بر اساس دستورالعمل، سابقه فرد و نظر کارکنان مرکز سلامت تعیین می‌شود.',
-        style: TextStyle(fontSize: 12),
       ),
-    ],
-  ),
-);
-
-}
-}
-
-class _PersonHeader extends StatelessWidget {
-const _PersonHeader({
-required this.person,
-});
-
-final Person person;
-
-@override
-Widget build(BuildContext context) {
-return Card(
-child: Padding(
-padding: const EdgeInsets.all(18),
-child: Row(
-children: [
-CircleAvatar(
-radius: 28,
-child: Icon(
-person.sex == PersonSex.female
-? Icons.woman_outlined
-: Icons.man_outlined,
-),
-),
-const SizedBox(width: 14),
-Expanded(
-child: Column(
-crossAxisAlignment: CrossAxisAlignment.start,
-children: [
-Text(
-person.fullName,
-style: const TextStyle(
-fontSize: 19,
-fontWeight: FontWeight.bold,
-),
-),
-const SizedBox(height: 4),
-Text(
-'تاریخ تولد: ${person.birthDate}',
-),
-if (person.isPregnant)
-const Padding(
-padding: EdgeInsets.only(top: 4),
-child: Text(
-'وضعیت بارداری: ثبت شده',
-style: TextStyle(
-fontWeight: FontWeight.bold,
-),
-),
-),
-],
-),
-),
-],
-),
-),
-);
-}
-}
-
-class _ImportantCard extends StatelessWidget {
-const _ImportantCard({
-required this.services,
-});
-
-final List<HealthService> services;
-
-@override
-Widget build(BuildContext context) {
-final theme = Theme.of(context);
-
-return Card(
-  child: Padding(
-    padding: const EdgeInsets.all(18),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
           children: [
-            Icon(
-              Icons.event_available_outlined,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text(
-                'مراقبت‌های پیش رو',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+            _PersonHeader(person: person),
+            if (upcoming.isNotEmpty) ...[
+              const SizedBox(height: 22),
+              const _SectionTitle(
+                title: 'مراقبت‌های پیش رو',
+              ),
+              const SizedBox(height: 8),
+              ...upcoming.map(
+                (service) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _ServiceRow(
+                    person: person,
+                    service: service,
+                  ),
                 ),
+              ),
+            ],
+            const SizedBox(height: 20),
+            ..._orderedCategories(grouped).map(
+              (category) {
+                final items = grouped[category]!;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: _CategorySection(
+                    title: _categoryTitle(category),
+                    count: items.length,
+                    children: items
+                        .map(
+                          (service) => Padding(
+                            padding: const EdgeInsets.only(bottom: 7),
+                            child: _ServiceRow(
+                              person: person,
+                              service: service,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                );
+              },
+            ),
+            if (services.isEmpty) const _EmptyServices(),
+            const SizedBox(height: 4),
+            const Text(
+              'زمان و نوع برخی خدمات بر اساس سن، سابقه فرد و دستورالعمل‌های مرکز سلامت تعیین می‌شود.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF667085),
+                fontSize: 11,
+                height: 1.7,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 6),
-        const Text(
-          'این موارد بر اساس اطلاعات ثبت‌شده برای این فرد مرتبط هستند.',
-        ),
-        const SizedBox(height: 12),
-        for (final service in services)
-          _ImportantServiceTile(service: service),
-      ],
-    ),
-  ),
-);
-
-}
-}
-
-class _ImportantServiceTile extends StatelessWidget {
-const _ImportantServiceTile({
-required this.service,
-});
-
-final HealthService service;
-
-@override
-Widget build(BuildContext context) {
-return Container(
-margin: const EdgeInsets.only(bottom: 8),
-child: ListTile(
-contentPadding: EdgeInsets.zero,
-leading: CircleAvatar(
-child: Icon(_iconFor(service.category)),
-),
-title: Text(
-service.shortTitle,
-style: const TextStyle(
-fontWeight: FontWeight.bold,
-),
-),
-subtitle: Text(service.description),
-),
-);
-}
-}
-
-class _CategoryCard extends StatelessWidget {
-const _CategoryCard({
-required this.category,
-required this.services,
-});
-
-final HealthServiceCategory category;
-final List<HealthService> services;
-
-@override
-Widget build(BuildContext context) {
-if (services.isEmpty) {
-return const SizedBox.shrink();
-}
-
-return Card(
-  margin: const EdgeInsets.only(bottom: 10),
-  child: ExpansionTile(
-    leading: Icon(_iconFor(category)),
-    title: Text(
-      _titleFor(category),
-      style: const TextStyle(
-        fontWeight: FontWeight.bold,
       ),
-    ),
-    subtitle: Text('${services.length} خدمت'),
-    children: [
-      for (final service in services)
-        _ServiceTile(service: service),
-    ],
-  ),
-);
+    );
+  }
 
-}
+  List<HealthServiceCategory> _orderedCategories(
+    Map<HealthServiceCategory, List<HealthService>> grouped,
+  ) {
+    const order = [
+      HealthServiceCategory.child,
+      HealthServiceCategory.adolescent,
+      HealthServiceCategory.youth,
+      HealthServiceCategory.elderly,
+      HealthServiceCategory.periodicCare,
+      HealthServiceCategory.screening,
+      HealthServiceCategory.women,
+      HealthServiceCategory.pregnancy,
+      HealthServiceCategory.mentalHealth,
+      HealthServiceCategory.nutrition,
+      HealthServiceCategory.oralHealth,
+      HealthServiceCategory.vaccination,
+    ];
 
-String _titleFor(HealthServiceCategory category) {
-switch (category) {
-case HealthServiceCategory.child:
-return 'کودک';
-case HealthServiceCategory.adolescent:
-return 'نوجوان';
-case HealthServiceCategory.youth:
-return 'جوان';
-case HealthServiceCategory.elderly:
-return 'سالمند';
-case HealthServiceCategory.periodicCare:
-return 'مراقبت‌های دوره‌ای';
-case HealthServiceCategory.screening:
-return 'غربالگری و بررسی‌ها';
-case HealthServiceCategory.vaccination:
-return 'واکسیناسیون';
-case HealthServiceCategory.women:
-return 'سلامت زنان';
-case HealthServiceCategory.pregnancy:
-return 'بارداری';
-case HealthServiceCategory.mentalHealth:
-return 'سلامت روان';
-case HealthServiceCategory.nutrition:
-return 'تغذیه و سبک زندگی';
-case HealthServiceCategory.oralHealth:
-return 'دهان و دندان';
-}
-}
-}
+    return order.where(grouped.containsKey).toList();
+  }
 
-class _ServiceTile extends StatelessWidget {
-const _ServiceTile({
-required this.service,
-});
-
-final HealthService service;
-
-@override
-Widget build(BuildContext context) {
-return ListTile(
-leading: Icon(_iconFor(service.category)),
-title: Text(service.title),
-subtitle: Column(
-crossAxisAlignment: CrossAxisAlignment.start,
-children: [
-const SizedBox(height: 3),
-Text(service.description),
-const SizedBox(height: 5),
-Text(
-_statusText(service.status),
-style: TextStyle(
-fontSize: 12,
-color: Theme.of(context).colorScheme.primary,
-fontWeight: FontWeight.bold,
-),
-),
-],
-),
-);
-}
+  String _categoryTitle(HealthServiceCategory category) {
+    switch (category) {
+      case HealthServiceCategory.child:
+        return 'مراقبت‌های کودک';
+      case HealthServiceCategory.adolescent:
+        return 'مراقبت‌های نوجوان';
+      case HealthServiceCategory.youth:
+        return 'مراقبت‌های جوان';
+      case HealthServiceCategory.elderly:
+        return 'سلامت سالمند';
+      case HealthServiceCategory.periodicCare:
+        return 'مراقبت‌های دوره‌ای';
+      case HealthServiceCategory.screening:
+        return 'غربالگری و بررسی‌ها';
+      case HealthServiceCategory.women:
+        return 'سلامت زنان';
+      case HealthServiceCategory.pregnancy:
+        return 'مراقبت‌های بارداری';
+      case HealthServiceCategory.mentalHealth:
+        return 'سلامت روان';
+      case HealthServiceCategory.nutrition:
+        return 'تغذیه و سبک زندگی';
+      case HealthServiceCategory.oralHealth:
+        return 'دهان و دندان';
+      case HealthServiceCategory.vaccination:
+        return 'واکسیناسیون';
+    }
+  }
 }
 
-String _statusText(HealthServiceStatus status) {
-switch (status) {
-case HealthServiceStatus.action:
-return 'نیازمند توجه';
-case HealthServiceStatus.upcoming:
-return 'در برنامه مراقبت';
-case HealthServiceStatus.completed:
-return 'انجام شده';
-case HealthServiceStatus.information:
-return 'اطلاعات و آموزش';
-}
+class _PersonHeader extends StatelessWidget {
+  const _PersonHeader({
+    required this.person,
+  });
+
+  final Person person;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: const BoxDecoration(
+            color: Color(0xFFEAF3DF),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            person.sex == PersonSex.female
+                ? Icons.female_rounded
+                : Icons.male_rounded,
+            color: const Color(0xFF527A18),
+            size: 26,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                person.fullName,
+                style: const TextStyle(
+                  color: Color(0xFF263238),
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'تاریخ تولد: ${person.birthDate}',
+                style: const TextStyle(
+                  color: Color(0xFF667085),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-IconData _iconFor(HealthServiceCategory category) {
-switch (category) {
-case HealthServiceCategory.child:
-return Icons.child_care_outlined;
-case HealthServiceCategory.adolescent:
-return Icons.school_outlined;
-case HealthServiceCategory.youth:
-return Icons.person_outline;
-case HealthServiceCategory.elderly:
-return Icons.elderly_outlined;
-case HealthServiceCategory.periodicCare:
-return Icons.monitor_heart_outlined;
-case HealthServiceCategory.screening:
-return Icons.search_rounded;
-case HealthServiceCategory.vaccination:
-return Icons.vaccines_outlined;
-case HealthServiceCategory.women:
-return Icons.woman_outlined;
-case HealthServiceCategory.pregnancy:
-return Icons.pregnant_woman_outlined;
-case HealthServiceCategory.mentalHealth:
-return Icons.psychology_outlined;
-case HealthServiceCategory.nutrition:
-return Icons.restaurant_outlined;
-case HealthServiceCategory.oralHealth:
-return Icons.health_and_safety_outlined;
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({
+    required this.title,
+  });
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 22,
+          decoration: BoxDecoration(
+            color: const Color(0xFF527A18),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFF263238),
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
 }
+
+class _CategorySection extends StatelessWidget {
+  const _CategorySection({
+    required this.title,
+    required this.count,
+    required this.children,
+  });
+
+  final String title;
+  final int count;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Color(0xFF263238),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            Text(
+              '$count خدمت',
+              style: const TextStyle(
+                color: Color(0xFF667085),
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 9),
+        ...children,
+      ],
+    );
+  }
+}
+
+class _ServiceRow extends StatelessWidget {
+  const _ServiceRow({
+    required this.person,
+    required this.service,
+  });
+
+  final Person person;
+  final HealthService service;
+
+  @override
+  Widget build(BuildContext context) {
+    const engine = HealthServiceEngine();
+    final schedule = engine.scheduleFor(person, service);
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ServiceDetailPage(
+                person: person,
+                service: service,
+              ),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 13,
+            vertical: 12,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF3DF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _iconFor(service.category),
+                  color: const Color(0xFF527A18),
+                  size: 21,
+                ),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      service.shortTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF263238),
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _subtitle(schedule, service.status),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: schedule != null
+                            ? const Color(0xFF527A18)
+                            : const Color(0xFF667085),
+                        fontSize: 11.5,
+                        fontWeight: schedule != null
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Icon(
+                Icons.chevron_left_rounded,
+                color: Color(0xFF98A2B3),
+                size: 21,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _subtitle(
+    HealthServiceSchedule? schedule,
+    HealthServiceStatus status,
+  ) {
+    if (schedule != null) {
+      return 'موعد: ${schedule.date}';
+    }
+
+    switch (status) {
+      case HealthServiceStatus.action:
+        return 'نیازمند توجه';
+      case HealthServiceStatus.upcoming:
+        return 'در برنامه مراقبت';
+      case HealthServiceStatus.completed:
+        return 'انجام شده';
+      case HealthServiceStatus.information:
+        return 'اطلاعات و آموزش';
+    }
+  }
+
+  IconData _iconFor(HealthServiceCategory category) {
+    switch (category) {
+      case HealthServiceCategory.vaccination:
+        return Icons.vaccines_outlined;
+      case HealthServiceCategory.pregnancy:
+        return Icons.pregnant_woman_outlined;
+      case HealthServiceCategory.women:
+        return Icons.female_outlined;
+      case HealthServiceCategory.child:
+        return Icons.child_care_outlined;
+      case HealthServiceCategory.adolescent:
+        return Icons.school_outlined;
+      case HealthServiceCategory.youth:
+        return Icons.person_outline_rounded;
+      case HealthServiceCategory.elderly:
+        return Icons.elderly_outlined;
+      case HealthServiceCategory.oralHealth:
+        return Icons.health_and_safety_outlined;
+      case HealthServiceCategory.nutrition:
+        return Icons.restaurant_outlined;
+      case HealthServiceCategory.mentalHealth:
+        return Icons.psychology_outlined;
+      case HealthServiceCategory.screening:
+        return Icons.search_outlined;
+      case HealthServiceCategory.periodicCare:
+        return Icons.health_and_safety_outlined;
+    }
+  }
+}
+
+class ServiceDetailPage extends StatelessWidget {
+  const ServiceDetailPage({
+    super.key,
+    required this.person,
+    required this.service,
+  });
+
+  final Person person;
+  final HealthService service;
+
+  @override
+  Widget build(BuildContext context) {
+    const engine = HealthServiceEngine();
+    final schedule = engine.scheduleFor(person, service);
+
+    final isVaccination =
+        service.category == HealthServiceCategory.vaccination;
+
+    final isPregnancy =
+        service.category == HealthServiceCategory.pregnancy ||
+        service.requiresPregnancy;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F9F6),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF7F9F6),
+        foregroundColor: const Color(0xFF263238),
+        elevation: 0,
+        title: const Text(
+          'خدمت سلامت',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
+          children: [
+            Text(
+              person.fullName,
+              style: const TextStyle(
+                color: Color(0xFF667085),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 7),
+            Text(
+              service.title,
+              style: const TextStyle(
+                color: Color(0xFF263238),
+                fontSize: 21,
+                fontWeight: FontWeight.w800,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 20),
+            if (schedule != null)
+              _DateCard(
+                schedule: schedule,
+                isVaccination: isVaccination,
+                isPregnancy: isPregnancy,
+              )
+            else
+              _InfoCard(
+                message: _noDateMessage(
+                  isVaccination: isVaccination,
+                  isPregnancy: isPregnancy,
+                ),
+              ),
+            if (service.description.trim().isNotEmpty) ...[
+              const SizedBox(height: 20),
+              const Text(
+                'درباره خدمت',
+                style: TextStyle(
+                  color: Color(0xFF263238),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 7),
+              Text(
+                service.description,
+                style: const TextStyle(
+                  color: Color(0xFF667085),
+                  fontSize: 13,
+                  height: 1.8,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _noDateMessage({
+    required bool isVaccination,
+    required bool isPregnancy,
+  }) {
+    if (isVaccination) {
+      return 'برای این فرد در حال حاضر موعد واکسن قابل محاسبه نیست.';
+    }
+
+    if (isPregnancy) {
+      return 'برای محاسبه موعد مراقبت بارداری، تاریخ شروع بارداری باید ثبت شده باشد.';
+    }
+
+    return 'برای این خدمت موعد مشخصی قابل محاسبه نیست.';
+  }
+}
+
+class _DateCard extends StatelessWidget {
+  const _DateCard({
+    required this.schedule,
+    required this.isVaccination,
+    required this.isPregnancy,
+  });
+
+  final HealthServiceSchedule schedule;
+  final bool isVaccination;
+  final bool isPregnancy;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = isVaccination
+        ? 'واکسیناسیون برنامه‌ای'
+        : isPregnancy
+            ? 'مراقبت دوران بارداری'
+            : 'خدمت سلامت';
+
+    return Container(
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.event_available_outlined,
+                color: Color(0xFF527A18),
+                size: 21,
+              ),
+              SizedBox(width: 7),
+              Text(
+                'موعد انجام',
+                style: TextStyle(
+                  color: Color(0xFF527A18),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 13),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAF3DF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              schedule.date.toString(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF263238),
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            schedule.title,
+            style: const TextStyle(
+              color: Color(0xFF263238),
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            type,
+            style: const TextStyle(
+              color: Color(0xFF667085),
+              fontSize: 12,
+            ),
+          ),
+          if (schedule.description.trim().isNotEmpty) ...[
+            const SizedBox(height: 9),
+            Text(
+              schedule.description,
+              style: const TextStyle(
+                color: Color(0xFF667085),
+                fontSize: 12,
+                height: 1.7,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            color: Color(0xFF667085),
+            size: 20,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Color(0xFF344054),
+                fontSize: 12.5,
+                height: 1.7,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyServices extends StatelessWidget {
+  const _EmptyServices();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Column(
+        children: [
+          Icon(
+            Icons.check_circle_outline_rounded,
+            color: Color(0xFF527A18),
+            size: 38,
+          ),
+          SizedBox(height: 10),
+          Text(
+            'در حال حاضر خدمتی برای نمایش وجود ندارد.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Color(0xFF344054),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
