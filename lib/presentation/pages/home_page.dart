@@ -21,15 +21,16 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  static const _darkGreen = Color(0xFF527A18);
-  static const _background = Color(0xFFF9FBF7);
-  static const _text = Color(0xFF344054);
+  final FamilyMemberStore _store = const FamilyMemberStore();
 
-  final FamilyMemberStore _store = FamilyMemberStore();
-  final HealthServiceEngine _engine = const HealthServiceEngine();
-
-  List<Person> _members = const [];
+  List<Person> _members = [];
   bool _loading = true;
+
+  static const _background = Color(0xFFF7F9F6);
+  static const _green = Color(0xFF527A18);
+  static const _lightGreen = Color(0xFFEAF3DF);
+  static const _text = Color(0xFF263238);
+  static const _muted = Color(0xFF667085);
 
   @override
   void initState() {
@@ -38,40 +39,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _load() async {
-    try {
-      final members = widget.loadMembers != null
-          ? await widget.loadMembers!()
-          : await _store.load();
+    final members = widget.loadMembers != null
+        ? await widget.loadMembers!()
+        : await _store.load();
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      setState(() {
-        _members = members;
-        _loading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        _loading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('خواندن اطلاعات خانواده انجام نشد.'),
-        ),
-      );
-    }
-  }
-
-  Future<void> _addMember() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const MemberFormPage(),
-      ),
-    );
-
-    await _load();
+    setState(() {
+      _members = members;
+      _loading = false;
+    });
   }
 
   Future<void> _openMember(Person member) async {
@@ -86,63 +63,30 @@ class _HomePageState extends State<HomePage> {
     await _load();
   }
 
-  Future<void> _openTask(_FamilyTask task) async {
+  Future<void> _addMember() async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ServiceDetailPage(
-          person: task.member,
-          service: task.service,
-        ),
+        builder: (_) => const MemberFormPage(),
       ),
     );
 
     await _load();
   }
 
-  List<_FamilyTask> _familyTasks() {
-    final tasks = <_FamilyTask>[];
-
-    for (final member in _members) {
-      final services = _engine
-          .servicesFor(member)
-          .where(
-            (service) =>
-                service.status == HealthServiceStatus.action ||
-                service.status == HealthServiceStatus.upcoming,
-          )
-          .toList();
-
-      for (final service in services) {
-        tasks.add(
-          _FamilyTask(
-            member: member,
-            service: service,
-          ),
-        );
-      }
-    }
-
-    return tasks;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final tasks = _familyTasks();
-
     return Scaffold(
       backgroundColor: _background,
       appBar: AppBar(
         backgroundColor: _background,
-        surfaceTintColor: Colors.transparent,
+        foregroundColor: _text,
         elevation: 0,
         centerTitle: false,
-        titleSpacing: 20,
         title: const Text(
           'خانه بهداشت خانه دوست',
           style: TextStyle(
-            color: _text,
-            fontSize: 21,
-            fontWeight: FontWeight.w700,
+            fontSize: 19,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ),
@@ -150,25 +94,27 @@ class _HomePageState extends State<HomePage> {
         child: _loading
             ? const Center(
                 child: CircularProgressIndicator(
-                  color: _darkGreen,
+                  color: _green,
                 ),
               )
             : RefreshIndicator(
-                color: _darkGreen,
+                color: _green,
                 onRefresh: _load,
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 30),
                   children: [
-                    _sectionTitle(
+                    _AddMemberButton(
+                      onTap: _addMember,
+                    ),
+                    const SizedBox(height: 24),
+                    const _SectionTitle(
                       title: 'اعضای خانواده',
                     ),
                     const SizedBox(height: 10),
                     if (_members.isEmpty)
-                      _EmptyFamilyCard(
-                        onAdd: _addMember,
-                      )
-                    else ...[
+                      const _EmptyMembers()
+                    else
                       ..._members.map(
                         (member) => Padding(
                           padding: const EdgeInsets.only(bottom: 8),
@@ -178,30 +124,31 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      _AddMemberButton(
-                        onTap: _addMember,
+                    if (_members.isNotEmpty) ...[
+                      const SizedBox(height: 22),
+                      const _SectionTitle(
+                        title: 'کارهای سلامت خانواده',
                       ),
-                    ],
-                    const SizedBox(height: 28),
-                    _sectionTitle(
-                      title: 'کارهای سلامت خانواده',
-                    ),
-                    const SizedBox(height: 10),
-                    if (_members.isEmpty)
-                      const _EmptyTasksCard()
-                    else if (tasks.isEmpty)
-                      const _NoTaskCard()
-                    else
-                      ...tasks.map(
+                      const SizedBox(height: 10),
+                      ..._familyTasks().map(
                         (task) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.only(bottom: 7),
                           child: _TaskTile(
                             task: task,
-                            onTap: () => _openTask(task),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => ServiceDetailPage(
+                                    person: task.member,
+                                    service: task.service,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),
@@ -209,17 +156,50 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _sectionTitle({
-    required String title,
-  }) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: _text,
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-      ),
-    );
+  List<_FamilyTask> _familyTasks() {
+    const engine = HealthServiceEngine();
+    final result = <_FamilyTask>[];
+
+    for (final member in _members) {
+      final services = engine.servicesFor(member);
+
+      for (final service in services) {
+        if (!_showOnHome(service)) continue;
+
+        result.add(
+          _FamilyTask(
+            member: member,
+            service: service,
+          ),
+        );
+      }
+    }
+
+    return result;
+  }
+
+  bool _showOnHome(HealthService service) {
+    if (service.category == HealthServiceCategory.vaccination) {
+      return service.shortTitle.contains('کودک') ||
+          service.title.contains('کودک');
+    }
+
+    if (service.id.toLowerCase().contains('vaccine_status')) {
+      return false;
+    }
+
+    if (service.shortTitle.contains('وضعیت واکسن') ||
+        service.title.contains('وضعیت واکسن')) {
+      return false;
+    }
+
+    if (service.shortTitle == 'واکسیناسیون' ||
+        service.title == 'واکسیناسیون') {
+      return false;
+    }
+
+    return service.status == HealthServiceStatus.action ||
+        service.status == HealthServiceStatus.upcoming;
   }
 }
 
@@ -233,6 +213,71 @@ class _FamilyTask {
   final HealthService service;
 }
 
+class _AddMemberButton extends StatelessWidget {
+  const _AddMemberButton({
+    required this.onTap,
+  });
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF527A18),
+      borderRadius: BorderRadius.circular(15),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(15),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.person_add_alt_1_rounded,
+                color: Colors.white,
+                size: 21,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'افزودن عضو خانواده',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({
+    required this.title,
+  });
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: Color(0xFF263238),
+        fontSize: 16,
+        fontWeight: FontWeight.w800,
+      ),
+    );
+  }
+}
+
 class _MemberTile extends StatelessWidget {
   const _MemberTile({
     required this.member,
@@ -242,61 +287,55 @@ class _MemberTile extends StatelessWidget {
   final Person member;
   final VoidCallback onTap;
 
-  static const _green = Color(0xFFA6E22E);
-  static const _text = Color(0xFF344054);
-  static const _muted = Color(0xFF667085);
-
   @override
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(15),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
+        borderRadius: BorderRadius.circular(15),
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 13,
+            horizontal: 13,
+            vertical: 12,
           ),
           child: Row(
             children: [
               Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF7D8),
-                  borderRadius: BorderRadius.circular(14),
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFEAF3DF),
+                  shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.person_outline_rounded,
-                  color: _green,
-                  size: 26,
+                child: Icon(
+                  member.sex == PersonSex.female
+                      ? Icons.female_rounded
+                      : Icons.male_rounded,
+                  color: Color(0xFF527A18),
+                  size: 24,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 11),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       member.fullName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: _text,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF263238),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      member.firstName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _muted,
-                        fontSize: 13,
+                    const SizedBox(height: 3),
+                    const Text(
+                      'مشاهده خدمات سلامت',
+                      style: TextStyle(
+                        color: Color(0xFF667085),
+                        fontSize: 11.5,
                       ),
                     ),
                   ],
@@ -304,7 +343,7 @@ class _MemberTile extends StatelessWidget {
               ),
               const Icon(
                 Icons.chevron_left_rounded,
-                color: _muted,
+                color: Color(0xFF98A2B3),
               ),
             ],
           ),
@@ -323,67 +362,57 @@ class _TaskTile extends StatelessWidget {
   final _FamilyTask task;
   final VoidCallback onTap;
 
-  static const _green = Color(0xFFA6E22E);
-  static const _text = Color(0xFF344054);
-  static const _muted = Color(0xFF667085);
-
   @override
   Widget build(BuildContext context) {
-    final isAction =
-        task.service.status == HealthServiceStatus.action;
-
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(13),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
+        borderRadius: BorderRadius.circular(13),
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 13,
+            horizontal: 12,
+            vertical: 10,
           ),
           child: Row(
             children: [
               Container(
-                width: 9,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: isAction ? Colors.orange : _green,
-                  borderRadius: BorderRadius.circular(8),
+                width: 38,
+                height: 38,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFEAF3DF),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _iconFor(task.service.category),
+                  color: Color(0xFF527A18),
+                  size: 20,
                 ),
               ),
-              const SizedBox(width: 13),
+              const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      task.member.fullName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _text,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      task.service.shortTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _muted,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  task.service.shortTitle,
+                  style: const TextStyle(
+                    color: Color(0xFF263238),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
+              Text(
+                task.member.fullName,
+                style: const TextStyle(
+                  color: Color(0xFF667085),
+                  fontSize: 11,
+                ),
+              ),
+              const SizedBox(width: 4),
               const Icon(
                 Icons.chevron_left_rounded,
-                color: _muted,
+                color: Color(0xFF98A2B3),
+                size: 20,
               ),
             ],
           ),
@@ -391,143 +420,66 @@ class _TaskTile extends StatelessWidget {
       ),
     );
   }
-}
 
-class _AddMemberButton extends StatelessWidget {
-  const _AddMemberButton({
-    required this.onTap,
-  });
-
-  final VoidCallback onTap;
-
-  static const _green = Color(0xFF527A18);
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: const Icon(
-        Icons.person_add_alt_1_rounded,
-        size: 20,
-      ),
-      label: const Text(
-        'افزودن عضو خانواده',
-      ),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: _green,
-        side: const BorderSide(
-          color: Color(0xFFD5E8B8),
-        ),
-        minimumSize: const Size.fromHeight(48),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-      ),
-    );
+  IconData _iconFor(HealthServiceCategory category) {
+    switch (category) {
+      case HealthServiceCategory.vaccination:
+        return Icons.vaccines_outlined;
+      case HealthServiceCategory.pregnancy:
+        return Icons.pregnant_woman_outlined;
+      case HealthServiceCategory.women:
+        return Icons.female_outlined;
+      case HealthServiceCategory.child:
+        return Icons.child_care_outlined;
+      case HealthServiceCategory.adolescent:
+        return Icons.school_outlined;
+      case HealthServiceCategory.youth:
+        return Icons.person_outline_rounded;
+      case HealthServiceCategory.elderly:
+        return Icons.elderly_outlined;
+      case HealthServiceCategory.oralHealth:
+        return Icons.health_and_safety_outlined;
+      case HealthServiceCategory.nutrition:
+        return Icons.restaurant_outlined;
+      case HealthServiceCategory.mentalHealth:
+        return Icons.psychology_outlined;
+      case HealthServiceCategory.screening:
+        return Icons.search_outlined;
+      case HealthServiceCategory.periodicCare:
+        return Icons.health_and_safety_outlined;
+    }
   }
 }
 
-class _EmptyFamilyCard extends StatelessWidget {
-  const _EmptyFamilyCard({
-    required this.onAdd,
-  });
-
-  final VoidCallback onAdd;
-
-  static const _text = Color(0xFF344054);
-  static const _muted = Color(0xFF667085);
+class _EmptyMembers extends StatelessWidget {
+  const _EmptyMembers();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(15),
       ),
-      child: Column(
+      child: const Column(
         children: [
-          const Icon(
+          Icon(
             Icons.people_outline_rounded,
-            size: 42,
-            color: Color(0xFFA6E22E),
+            color: Color(0xFF527A18),
+            size: 38,
           ),
-          const SizedBox(height: 10),
-          const Text(
-            'هنوز عضوی از خانواده اضافه نشده است.',
+          SizedBox(height: 10),
+          Text(
+            'هنوز عضوی به خانواده اضافه نشده است.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: _text,
-              fontSize: 15,
+              color: Color(0xFF344054),
+              fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'برای شروع، اعضای خانواده را اضافه کنید.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: _muted,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 14),
-          _AddMemberButton(
-            onTap: onAdd,
-          ),
         ],
-      ),
-    );
-  }
-}
-
-class _EmptyTasksCard extends StatelessWidget {
-  const _EmptyTasksCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _SimpleMessageCard(
-      text:
-          'پس از افزودن اعضای خانواده، خدمات موردنیاز آن‌ها اینجا نمایش داده می‌شود.',
-    );
-  }
-}
-
-class _NoTaskCard extends StatelessWidget {
-  const _NoTaskCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _SimpleMessageCard(
-      text:
-          'در حال حاضر موردی برای پیگیری در فهرست خانواده ثبت نشده است.',
-    );
-  }
-}
-
-class _SimpleMessageCard extends StatelessWidget {
-  const _SimpleMessageCard({
-    required this.text,
-  });
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: Color(0xFF667085),
-          fontSize: 13,
-          height: 1.7,
-        ),
       ),
     );
   }
