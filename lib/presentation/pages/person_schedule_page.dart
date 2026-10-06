@@ -223,8 +223,6 @@ class _ScheduleCard extends StatelessWidget {
   final bool isVaccination;
   final bool isPregnancy;
 
-  static const _green = Color(0xFFA6E22E);
-  static const _darkGreen = Color(0xFF527A18);
   static const _text = Color(0xFF344054);
   static const _muted = Color(0xFF667085);
 
@@ -257,14 +255,14 @@ class _ScheduleCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.event_available_outlined,
-                color: _darkGreen,
+                color: Color(0xFF527A18),
                 size: 23,
               ),
               SizedBox(width: 8),
               Text(
                 'موعد انجام',
                 style: TextStyle(
-                  color: _darkGreen,
+                  color: Color(0xFF527A18),
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                 ),
@@ -279,7 +277,7 @@ class _ScheduleCard extends StatelessWidget {
               vertical: 15,
             ),
             decoration: BoxDecoration(
-              color: _green.withValues(alpha: 0.12),
+              color: const Color(0xFFA6E22E).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(15),
             ),
             child: Text(
@@ -633,34 +631,5 @@ class _EmptyServices extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-IconData _iconFor(HealthServiceCategory category) {
-  switch (category) {
-    case HealthServiceCategory.vaccination:
-      return Icons.vaccines_outlined;
-    case HealthServiceCategory.pregnancy:
-      return Icons.pregnant_woman_outlined;
-    case HealthServiceCategory.women:
-      return Icons.female_outlined;
-    case HealthServiceCategory.child:
-      return Icons.child_care_outlined;
-    case HealthServiceCategory.adolescent:
-      return Icons.school_outlined;
-    case HealthServiceCategory.youth:
-      return Icons.person_outline_rounded;
-    case HealthServiceCategory.elderly:
-      return Icons.elderly_outlined;
-    case HealthServiceCategory.oralHealth:
-      return Icons.health_and_safety_outlined;
-    case HealthServiceCategory.nutrition:
-      return Icons.restaurant_outlined;
-    case HealthServiceCategory.mentalHealth:
-      return Icons.psychology_outlined;
-    case HealthServiceCategory.screening:
-      return Icons.search_outlined;
-    case HealthServiceCategory.periodicCare:
-      return Icons.health_and_safety_outlined;
   }
 }
