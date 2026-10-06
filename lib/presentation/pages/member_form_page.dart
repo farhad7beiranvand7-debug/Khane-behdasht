@@ -29,10 +29,15 @@ class _MemberFormPageState extends State<MemberFormPage> {
 
   JalaliBirthDate? _birthDate;
   JalaliBirthDate? _lmpDate;
+
   PersonSex _sex = PersonSex.male;
+
   bool _isPregnant = false;
-  Set<HealthCondition> _conditions = {HealthCondition.none};
   bool _saving = false;
+
+  Set<HealthCondition> _conditions = {
+    HealthCondition.none,
+  };
 
   @override
   void initState() {
@@ -47,7 +52,10 @@ class _MemberFormPageState extends State<MemberFormPage> {
       _lmpDate = person.lmpDate;
       _sex = person.sex;
       _isPregnant = person.isPregnant;
-      _conditions = Set<HealthCondition>.from(person.conditions);
+
+      _conditions = Set<HealthCondition>.from(
+        person.conditions,
+      );
     }
   }
 
@@ -64,11 +72,11 @@ class _MemberFormPageState extends State<MemberFormPage> {
       initialDate: _birthDate,
     );
 
-    if (selected != null) {
-      setState(() {
-        _birthDate = selected;
-      });
-    }
+    if (selected == null) return;
+
+    setState(() {
+      _birthDate = selected;
+    });
   }
 
   Future<void> _selectLmpDate() async {
@@ -77,11 +85,11 @@ class _MemberFormPageState extends State<MemberFormPage> {
       initialDate: _lmpDate,
     );
 
-    if (selected != null) {
-      setState(() {
-        _lmpDate = selected;
-      });
-    }
+    if (selected == null) return;
+
+    setState(() {
+      _lmpDate = selected;
+    });
   }
 
   Future<JalaliBirthDate?> _showDatePicker({
@@ -90,17 +98,26 @@ class _MemberFormPageState extends State<MemberFormPage> {
   }) async {
     final now = DateTime.now();
 
-    final year = initialDate?.year ?? now.year - 621;
-    final month = initialDate?.month ?? now.month;
-    final day = initialDate?.day ?? now.day;
+    final initialYear =
+        initialDate?.year ?? now.year - 621;
+
+    final initialMonth =
+        initialDate?.month ?? now.month;
+
+    final initialDay =
+        initialDate?.day ?? now.day;
 
     final controller = TextEditingController(
-      text: _formatDateValues(year, month, day),
+      text: _formatDateValues(
+        initialYear,
+        initialMonth,
+        initialDay,
+      ),
     );
 
     final result = await showDialog<JalaliBirthDate>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
           title: Text(
@@ -116,7 +133,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
             keyboardType: TextInputType.number,
             textDirection: TextDirection.ltr,
             decoration: InputDecoration(
-              hintText: 'مثلاً 1400/05/20',
+              hintText: '1400/05/20',
               prefixIcon: const Icon(
                 Icons.calendar_month_outlined,
                 color: _darkGreen,
@@ -135,12 +152,18 @@ class _MemberFormPageState extends State<MemberFormPage> {
                   color: Color(0xFFE4E7EC),
                 ),
               ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                  color: _darkGreen,
+                ),
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.of(dialogContext).pop();
               },
               child: const Text('انصراف'),
             ),
@@ -149,7 +172,9 @@ class _MemberFormPageState extends State<MemberFormPage> {
                 backgroundColor: _darkGreen,
               ),
               onPressed: () {
-                final parsed = _parseDate(controller.text);
+                final parsed = _parseDate(
+                  controller.text,
+                );
 
                 if (parsed == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -162,7 +187,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
                   return;
                 }
 
-                Navigator.pop(context, parsed);
+                Navigator.of(dialogContext).pop(parsed);
               },
               child: const Text('تأیید'),
             ),
@@ -177,29 +202,42 @@ class _MemberFormPageState extends State<MemberFormPage> {
   }
 
   JalaliBirthDate? _parseDate(String value) {
-    final normalized = value.trim().replaceAll('-', '/');
+    final normalized = value
+        .trim()
+        .replaceAll('-', '/');
+
     final parts = normalized.split('/');
 
-    if (parts.length != 3) return null;
-
-    final parsedYear = int.tryParse(parts[0]);
-    final parsedMonth = int.tryParse(parts[1]);
-    final parsedDay = int.tryParse(parts[2]);
-
-    if (parsedYear == null ||
-        parsedMonth == null ||
-        parsedDay == null) {
+    if (parts.length != 3) {
       return null;
     }
 
-    if (parsedYear < 1300 || parsedYear > 1500) return null;
-    if (parsedMonth < 1 || parsedMonth > 12) return null;
-    if (parsedDay < 1 || parsedDay > 31) return null;
+    final year = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    final day = int.tryParse(parts[2]);
+
+    if (year == null ||
+        month == null ||
+        day == null) {
+      return null;
+    }
+
+    if (year < 1300 || year > 1500) {
+      return null;
+    }
+
+    if (month < 1 || month > 12) {
+      return null;
+    }
+
+    if (day < 1 || day > 31) {
+      return null;
+    }
 
     return JalaliBirthDate(
-      year: parsedYear,
-      month: parsedMonth,
-      day: parsedDay,
+      year: year,
+      month: month,
+      day: day,
     );
   }
 
@@ -221,11 +259,54 @@ class _MemberFormPageState extends State<MemberFormPage> {
     );
   }
 
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _setCondition(
+    HealthCondition condition,
+    bool selected,
+  ) {
+    setState(() {
+      if (condition == HealthCondition.none) {
+        _conditions = {
+          HealthCondition.none,
+        };
+        return;
+      }
+
+      _conditions.remove(
+        HealthCondition.none,
+      );
+
+      if (selected) {
+        _conditions.add(condition);
+      } else {
+        _conditions.remove(condition);
+      }
+
+      if (_conditions.isEmpty) {
+        _conditions.add(
+          HealthCondition.none,
+        );
+      }
+    });
+  }
+
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     if (_birthDate == null) {
-      _showMessage('تاریخ تولد را وارد کنید.');
+      _showMessage(
+        'تاریخ تولد را وارد کنید.',
+      );
       return;
     }
 
@@ -243,11 +324,13 @@ class _MemberFormPageState extends State<MemberFormPage> {
     });
 
     try {
-      final existingMembers = await _store.load();
+      final members = await _store.load();
 
       final person = Person(
         id: widget.person?.id ??
-            DateTime.now().microsecondsSinceEpoch.toString(),
+            DateTime.now()
+                .microsecondsSinceEpoch
+                .toString(),
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
         birthDate: _birthDate!,
@@ -257,17 +340,17 @@ class _MemberFormPageState extends State<MemberFormPage> {
         lmpDate: _lmpDate,
       );
 
-      final index = existingMembers.indexWhere(
+      final index = members.indexWhere(
         (item) => item.id == person.id,
       );
 
       if (index >= 0) {
-        existingMembers[index] = person;
+        members[index] = person;
       } else {
-        existingMembers.add(person);
+        members.add(person);
       }
 
-      await _store.save(existingMembers);
+      await _store.save(members);
 
       if (!mounted) return;
 
@@ -279,41 +362,10 @@ class _MemberFormPageState extends State<MemberFormPage> {
         _saving = false;
       });
 
-      _showMessage('ذخیره اطلاعات انجام نشد.');
+      _showMessage(
+        'ذخیره اطلاعات انجام نشد.',
+      );
     }
-  }
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _setCondition(
-    HealthCondition condition,
-    bool selected,
-  ) {
-    setState(() {
-      if (condition == HealthCondition.none) {
-        _conditions = {HealthCondition.none};
-        return;
-      }
-
-      _conditions.remove(HealthCondition.none);
-
-      if (selected) {
-        _conditions.add(condition);
-      } else {
-        _conditions.remove(condition);
-      }
-
-      if (_conditions.isEmpty) {
-        _conditions.add(HealthCondition.none);
-      }
-    });
   }
 
   @override
@@ -360,7 +412,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
                 hint: 'نام فرد',
                 icon: Icons.person_outline_rounded,
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
+                  if (value == null ||
+                      value.trim().isEmpty) {
                     return 'نام را وارد کنید.';
                   }
 
@@ -381,7 +434,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
                 hint: 'نام خانوادگی',
                 icon: Icons.badge_outlined,
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
+                  if (value == null ||
+                      value.trim().isEmpty) {
                     return 'نام خانوادگی را وارد کنید.';
                   }
 
@@ -419,7 +473,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
                     child: _GenderChoice(
                       title: 'مرد',
                       icon: Icons.male_rounded,
-                      selected: _sex == PersonSex.male,
+                      selected:
+                          _sex == PersonSex.male,
                       onTap: () {
                         setState(() {
                           _sex = PersonSex.male;
@@ -434,7 +489,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
                     child: _GenderChoice(
                       title: 'زن',
                       icon: Icons.female_rounded,
-                      selected: _sex == PersonSex.female,
+                      selected:
+                          _sex == PersonSex.female,
                       onTap: () {
                         setState(() {
                           _sex = PersonSex.female;
@@ -455,9 +511,11 @@ class _MemberFormPageState extends State<MemberFormPage> {
 
               _ConditionChoice(
                 title: 'هیچ‌کدام',
-                icon: Icons.check_circle_outline_rounded,
-                selected:
-                    _conditions.contains(HealthCondition.none),
+                icon:
+                    Icons.check_circle_outline_rounded,
+                selected: _conditions.contains(
+                  HealthCondition.none,
+                ),
                 onTap: () {
                   _setCondition(
                     HealthCondition.none,
@@ -470,7 +528,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
 
               _ConditionChoice(
                 title: 'فشار خون بالا',
-                icon: Icons.favorite_border_rounded,
+                icon:
+                    Icons.favorite_border_rounded,
                 selected: _conditions.contains(
                   HealthCondition.hypertension,
                 ),
@@ -488,7 +547,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
 
               _ConditionChoice(
                 title: 'دیابت',
-                icon: Icons.water_drop_outlined,
+                icon:
+                    Icons.water_drop_outlined,
                 selected: _conditions.contains(
                   HealthCondition.diabetes,
                 ),
@@ -508,7 +568,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(17),
+                    borderRadius:
+                        BorderRadius.circular(17),
                     border: Border.all(
                       color: const Color(0xFFE4E7EC),
                     ),
@@ -550,7 +611,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
                   const SizedBox(height: 12),
 
                   const _FieldLabel(
-                    text: 'اولین روز آخرین قاعدگی',
+                    text:
+                        'اولین روز آخرین قاعدگی',
                   ),
 
                   const SizedBox(height: 8),
@@ -559,7 +621,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
                     value: _lmpDate == null
                         ? null
                         : _formatDate(_lmpDate!),
-                    hint: 'انتخاب تاریخ آخرین قاعدگی',
+                    hint:
+                        'انتخاب تاریخ آخرین قاعدگی',
                     onTap: _selectLmpDate,
                   ),
                 ],
@@ -570,19 +633,22 @@ class _MemberFormPageState extends State<MemberFormPage> {
               SizedBox(
                 height: 54,
                 child: FilledButton(
-                  onPressed: _saving ? null : _save,
+                  onPressed:
+                      _saving ? null : _save,
                   style: FilledButton.styleFrom(
                     backgroundColor: _darkGreen,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius:
+                          BorderRadius.circular(16),
                     ),
                   ),
                   child: _saving
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(
+                          child:
+                              CircularProgressIndicator(
                             strokeWidth: 2,
                             color: Colors.white,
                           ),
@@ -593,7 +659,8 @@ class _MemberFormPageState extends State<MemberFormPage> {
                               : 'افزودن به خانواده',
                           style: const TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w800,
+                            fontWeight:
+                                FontWeight.w800,
                           ),
                         ),
                 ),
@@ -627,8 +694,10 @@ class _Header extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: _green.withValues(alpha: 0.20),
-              borderRadius: BorderRadius.circular(15),
+              color:
+                  _green.withValues(alpha: 0.20),
+              borderRadius:
+                  BorderRadius.circular(15),
             ),
             child: const Icon(
               Icons.home_outlined,
@@ -703,19 +772,22 @@ class _TextField extends StatelessWidget {
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius:
+              BorderRadius.circular(16),
           borderSide: const BorderSide(
             color: Color(0xFFE4E7EC),
           ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius:
+              BorderRadius.circular(16),
           borderSide: const BorderSide(
             color: Color(0xFFE4E7EC),
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius:
+              BorderRadius.circular(16),
           borderSide: const BorderSide(
             color: Color(0xFF527A18),
             width: 1.5,
@@ -755,7 +827,8 @@ class _DateField extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius:
+              BorderRadius.circular(16),
           border: Border.all(
             color: const Color(0xFFE4E7EC),
           ),
@@ -771,7 +844,8 @@ class _DateField extends StatelessWidget {
               child: Text(
                 hasValue ? value! : hint,
                 style: TextStyle(
-                  color: hasValue ? _text : _muted,
+                  color:
+                      hasValue ? _text : _muted,
                   fontSize: 14,
                   fontWeight: hasValue
                       ? FontWeight.w600
@@ -813,13 +887,16 @@ class _GenderChoice extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(vertical: 15),
+        duration:
+            const Duration(milliseconds: 160),
+        padding:
+            const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
           color: selected
               ? _green.withValues(alpha: 0.18)
               : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius:
+              BorderRadius.circular(16),
           border: Border.all(
             color: selected
                 ? _darkGreen
@@ -828,7 +905,8 @@ class _GenderChoice extends StatelessWidget {
           ),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment:
+              MainAxisAlignment.center,
           children: [
             Icon(
               icon,
@@ -876,7 +954,8 @@ class _ConditionChoice extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(15),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
+        duration:
+            const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(
           horizontal: 15,
           vertical: 14,
@@ -885,7 +964,8 @@ class _ConditionChoice extends StatelessWidget {
           color: selected
               ? _green.withValues(alpha: 0.15)
               : Colors.white,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius:
+              BorderRadius.circular(15),
           border: Border.all(
             color: selected
                 ? _darkGreen
@@ -925,23 +1005,3 @@ class _ConditionChoice extends StatelessWidget {
     );
   }
 }
-
-2. "person_schedule_page.dart"
-
-برای این فایل فعلاً کل فایل را جایگزین نکن؛ چون سه رنگی که analyzer گزارش کرده صرفاً تعریف شده‌اند و استفاده نمی‌شوند.
-
-در ابتدای فایل، این سه خط را حذف کن:
-
-static const _green = Color(0xFFA6E22E);
-static const _darkGreen = Color(0xFF527A18);
-static const _muted = Color(0xFF667085);
-
-این کار هیچ تغییری در منطق صفحه ایجاد نمی‌کند.
-
-بعد Commit & Push کن.
-
-اگر Run بعدی "Flutter analyze" را با:
-
-No issues found!
-
-گذراند، دیگر به این فایل‌ها دست نمی‌زنیم و می‌رویم سراغ مرحله مهم بعدی: باز شدن یک خدمت به‌صورت مستقل، همراه با تاریخ واقعی خدمت، نوع واکسن/دوز یا نوع مراقبت بارداری.
