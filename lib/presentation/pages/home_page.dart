@@ -28,9 +28,7 @@ class _HomePageState extends State<HomePage> {
 
   static const _background = Color(0xFFF7F9F6);
   static const _green = Color(0xFF527A18);
-  static const _lightGreen = Color(0xFFEAF3DF);
   static const _text = Color(0xFF263238);
-  static const _muted = Color(0xFF667085);
 
   @override
   void initState() {
@@ -313,7 +311,7 @@ class _MemberTile extends StatelessWidget {
                   member.sex == PersonSex.female
                       ? Icons.female_rounded
                       : Icons.male_rounded,
-                  color: Color(0xFF527A18),
+                  color: const Color(0xFF527A18),
                   size: 24,
                 ),
               ),
@@ -386,7 +384,7 @@ class _TaskTile extends StatelessWidget {
                 ),
                 child: Icon(
                   _iconFor(task.service.category),
-                  color: Color(0xFF527A18),
+                  color: const Color(0xFF527A18),
                   size: 20,
                 ),
               ),
