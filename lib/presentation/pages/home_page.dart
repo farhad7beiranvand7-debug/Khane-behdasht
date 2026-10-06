@@ -20,14 +20,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  static const _green = Color(0xFFA6E22E);
   static const _darkGreen = Color(0xFF527A18);
   static const _background = Color(0xFFF9FBF7);
   static const _text = Color(0xFF344054);
-  static const _muted = Color(0xFF667085);
 
   final FamilyMemberStore _store = FamilyMemberStore();
-  const HealthServiceEngine _engine = HealthServiceEngine();
+  final HealthServiceEngine _engine = const HealthServiceEngine();
 
   List<Person> _members = const [];
   bool _loading = true;
@@ -137,7 +135,9 @@ class _HomePageState extends State<HomePage> {
       body: SafeArea(
         child: _loading
             ? const Center(
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  color: _darkGreen,
+                ),
               )
             : RefreshIndicator(
                 color: _darkGreen,
@@ -473,7 +473,8 @@ class _EmptyTasksCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const _SimpleMessageCard(
-      text: 'پس از افزودن اعضای خانواده، خدمات موردنیاز آن‌ها اینجا نمایش داده می‌شود.',
+      text:
+          'پس از افزودن اعضای خانواده، خدمات موردنیاز آن‌ها اینجا نمایش داده می‌شود.',
     );
   }
 }
@@ -484,7 +485,8 @@ class _NoTaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const _SimpleMessageCard(
-      text: 'در حال حاضر موردی برای پیگیری در فهرست خانواده ثبت نشده است.',
+      text:
+          'در حال حاضر موردی برای پیگیری در فهرست خانواده ثبت نشده است.',
     );
   }
 }
