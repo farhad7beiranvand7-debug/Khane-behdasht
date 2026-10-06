@@ -26,10 +26,14 @@ class HealthServicesPage extends StatelessWidget {
         )
         .toList();
 
-    final grouped = <HealthServiceCategory, List<HealthService>>{};
+    final grouped =
+        <HealthServiceCategory, List<HealthService>>{};
 
     for (final service in services) {
-      grouped.putIfAbsent(service.category, () => []).add(service);
+      grouped.putIfAbsent(
+        service.category,
+        () => [],
+      ).add(service);
     }
 
     return Scaffold(
@@ -48,7 +52,12 @@ class HealthServicesPage extends StatelessWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            4,
+            16,
+            28,
+          ),
           children: [
             _PersonHeader(person: person),
             if (upcoming.isNotEmpty) ...[
@@ -59,7 +68,8 @@ class HealthServicesPage extends StatelessWidget {
               const SizedBox(height: 8),
               ...upcoming.map(
                 (service) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding:
+                      const EdgeInsets.only(bottom: 8),
                   child: _ServiceRow(
                     person: person,
                     service: service,
@@ -73,14 +83,18 @@ class HealthServicesPage extends StatelessWidget {
                 final items = grouped[category]!;
 
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
+                  padding:
+                      const EdgeInsets.only(bottom: 20),
                   child: _CategorySection(
                     title: _categoryTitle(category),
                     count: items.length,
                     children: items
                         .map(
                           (service) => Padding(
-                            padding: const EdgeInsets.only(bottom: 7),
+                            padding:
+                                const EdgeInsets.only(
+                              bottom: 7,
+                            ),
                             child: _ServiceRow(
                               person: person,
                               service: service,
@@ -92,7 +106,8 @@ class HealthServicesPage extends StatelessWidget {
                 );
               },
             ),
-            if (services.isEmpty) const _EmptyServices(),
+            if (services.isEmpty)
+              const _EmptyServices(),
             const SizedBox(height: 4),
             const Text(
               'زمان و نوع برخی خدمات بر اساس سن، سابقه فرد و دستورالعمل‌های مرکز سلامت تعیین می‌شود.',
@@ -110,7 +125,8 @@ class HealthServicesPage extends StatelessWidget {
   }
 
   List<HealthServiceCategory> _orderedCategories(
-    Map<HealthServiceCategory, List<HealthService>> grouped,
+    Map<HealthServiceCategory, List<HealthService>>
+        grouped,
   ) {
     const order = [
       HealthServiceCategory.child,
@@ -127,10 +143,14 @@ class HealthServicesPage extends StatelessWidget {
       HealthServiceCategory.vaccination,
     ];
 
-    return order.where(grouped.containsKey).toList();
+    return order
+        .where(grouped.containsKey)
+        .toList();
   }
 
-  String _categoryTitle(HealthServiceCategory category) {
+  String _categoryTitle(
+    HealthServiceCategory category,
+  ) {
     switch (category) {
       case HealthServiceCategory.child:
         return 'مراقبت‌های کودک';
@@ -189,7 +209,8 @@ class _PersonHeader extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
             children: [
               Text(
                 person.fullName,
@@ -201,10 +222,11 @@ class _PersonHeader extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'تاریخ تولد: ${person.birthDate}',
+                person.birthDate.exactAge(),
                 style: const TextStyle(
-                  color: Color(0xFF667085),
+                  color: Color(0xFF527A18),
                   fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -231,7 +253,8 @@ class _SectionTitle extends StatelessWidget {
           height: 22,
           decoration: BoxDecoration(
             color: const Color(0xFF527A18),
-            borderRadius: BorderRadius.circular(4),
+            borderRadius:
+                BorderRadius.circular(4),
           ),
         ),
         const SizedBox(width: 8),
@@ -262,7 +285,8 @@ class _CategorySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         Row(
           children: [
@@ -304,7 +328,8 @@ class _ServiceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const engine = HealthServiceEngine();
-    final schedule = engine.scheduleFor(person, service);
+    final schedule =
+        engine.scheduleFor(person, service);
 
     return Material(
       color: Colors.white,
@@ -333,23 +358,27 @@ class _ServiceRow extends StatelessWidget {
                 height: 40,
                 decoration: BoxDecoration(
                   color: const Color(0xFFEAF3DF),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius:
+                      BorderRadius.circular(12),
                 ),
                 child: Icon(
                   _iconFor(service.category),
-                  color: const Color(0xFF527A18),
+                  color:
+                      const Color(0xFF527A18),
                   size: 21,
                 ),
               ),
               const SizedBox(width: 11),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     Text(
                       service.shortTitle,
                       maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      overflow:
+                          TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFF263238),
                         fontSize: 13.5,
@@ -358,13 +387,21 @@ class _ServiceRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _subtitle(schedule, service.status),
+                      _subtitle(
+                        schedule,
+                        service.status,
+                      ),
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      overflow:
+                          TextOverflow.ellipsis,
                       style: TextStyle(
                         color: schedule != null
-                            ? const Color(0xFF527A18)
-                            : const Color(0xFF667085),
+                            ? const Color(
+                                0xFF527A18,
+                              )
+                            : const Color(
+                                0xFF667085,
+                              ),
                         fontSize: 11.5,
                         fontWeight: schedule != null
                             ? FontWeight.w600
@@ -407,7 +444,9 @@ class _ServiceRow extends StatelessWidget {
     }
   }
 
-  IconData _iconFor(HealthServiceCategory category) {
+  IconData _iconFor(
+    HealthServiceCategory category,
+  ) {
     switch (category) {
       case HealthServiceCategory.vaccination:
         return Icons.vaccines_outlined;
@@ -450,20 +489,26 @@ class ServiceDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const engine = HealthServiceEngine();
-    final schedule = engine.scheduleFor(person, service);
+    final schedule =
+        engine.scheduleFor(person, service);
 
     final isVaccination =
-        service.category == HealthServiceCategory.vaccination;
+        service.category ==
+            HealthServiceCategory.vaccination;
 
     final isPregnancy =
-        service.category == HealthServiceCategory.pregnancy ||
+        service.category ==
+            HealthServiceCategory.pregnancy ||
         service.requiresPregnancy;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9F6),
+      backgroundColor:
+          const Color(0xFFF7F9F6),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F9F6),
-        foregroundColor: const Color(0xFF263238),
+        backgroundColor:
+            const Color(0xFFF7F9F6),
+        foregroundColor:
+            const Color(0xFF263238),
         elevation: 0,
         title: const Text(
           'خدمت سلامت',
@@ -475,7 +520,12 @@ class ServiceDetailPage extends StatelessWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
+          padding: const EdgeInsets.fromLTRB(
+            18,
+            8,
+            18,
+            28,
+          ),
           children: [
             Text(
               person.fullName,
@@ -499,17 +549,23 @@ class ServiceDetailPage extends StatelessWidget {
             if (schedule != null)
               _DateCard(
                 schedule: schedule,
-                isVaccination: isVaccination,
-                isPregnancy: isPregnancy,
+                isVaccination:
+                    isVaccination,
+                isPregnancy:
+                    isPregnancy,
               )
             else
               _InfoCard(
                 message: _noDateMessage(
-                  isVaccination: isVaccination,
-                  isPregnancy: isPregnancy,
+                  isVaccination:
+                      isVaccination,
+                  isPregnancy:
+                      isPregnancy,
                 ),
               ),
-            if (service.description.trim().isNotEmpty) ...[
+            if (service.description
+                .trim()
+                .isNotEmpty) ...[
               const SizedBox(height: 20),
               const Text(
                 'درباره خدمت',
@@ -574,10 +630,12 @@ class _DateCard extends StatelessWidget {
       padding: const EdgeInsets.all(17),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius:
+            BorderRadius.circular(16),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
@@ -600,10 +658,14 @@ class _DateCard extends StatelessWidget {
           const SizedBox(height: 13),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 13),
+            padding:
+                const EdgeInsets.symmetric(
+              vertical: 13,
+            ),
             decoration: BoxDecoration(
               color: const Color(0xFFEAF3DF),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius:
+                  BorderRadius.circular(12),
             ),
             child: Text(
               schedule.date.toString(),
@@ -632,7 +694,9 @@ class _DateCard extends StatelessWidget {
               fontSize: 12,
             ),
           ),
-          if (schedule.description.trim().isNotEmpty) ...[
+          if (schedule.description
+              .trim()
+              .isNotEmpty) ...[
             const SizedBox(height: 9),
             Text(
               schedule.description,
@@ -662,10 +726,12 @@ class _InfoCard extends StatelessWidget {
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius:
+            BorderRadius.circular(15),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           const Icon(
             Icons.info_outline_rounded,
@@ -698,7 +764,8 @@ class _EmptyServices extends StatelessWidget {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius:
+            BorderRadius.circular(16),
       ),
       child: const Column(
         children: [
