@@ -13,10 +13,7 @@ class PersonSchedulePage extends StatelessWidget {
   final Person person;
 
   static const _background = Color(0xFFF7F9F6);
-  static const _green = Color(0xFF527A18);
-  static const _lightGreen = Color(0xFFEAF3DF);
   static const _text = Color(0xFF263238);
-  static const _muted = Color(0xFF667085);
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +31,6 @@ class PersonSchedulePage extends StatelessWidget {
     final grouped = <HealthServiceCategory, List<HealthService>>{};
 
     for (final service in services) {
-      if (_shouldHide(service)) continue;
-
       grouped.putIfAbsent(service.category, () => []).add(service);
     }
 
@@ -64,17 +59,15 @@ class PersonSchedulePage extends StatelessWidget {
                 title: 'مراقبت‌های پیش رو',
               ),
               const SizedBox(height: 8),
-              ...upcoming
-                  .where((service) => !_shouldHide(service))
-                  .map(
-                    (service) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _ServiceRow(
-                        person: person,
-                        service: service,
-                      ),
-                    ),
+              ...upcoming.map(
+                (service) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _ServiceRow(
+                    person: person,
+                    service: service,
                   ),
+                ),
+              ),
             ],
             const SizedBox(height: 20),
             ..._orderedCategories(grouped).map(
@@ -107,7 +100,7 @@ class PersonSchedulePage extends StatelessWidget {
               'زمان و نوع برخی خدمات بر اساس سن، سابقه فرد و دستورالعمل‌های مرکز سلامت تعیین می‌شود.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: _muted,
+                color: Color(0xFF667085),
                 fontSize: 11,
                 height: 1.7,
               ),
@@ -116,14 +109,6 @@ class PersonSchedulePage extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  bool _shouldHide(HealthService service) {
-    if (service.category == HealthServiceCategory.vaccination) {
-      return false;
-    }
-
-    return false;
   }
 
   List<HealthServiceCategory> _orderedCategories(
@@ -184,9 +169,6 @@ class _PersonInfo extends StatelessWidget {
 
   final Person person;
 
-  static const _text = Color(0xFF263238);
-  static const _muted = Color(0xFF667085);
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -202,7 +184,7 @@ class _PersonInfo extends StatelessWidget {
             person.sex == PersonSex.female
                 ? Icons.female_rounded
                 : Icons.male_rounded,
-            color: Color(0xFF527A18),
+            color: const Color(0xFF527A18),
             size: 26,
           ),
         ),
@@ -214,7 +196,7 @@ class _PersonInfo extends StatelessWidget {
               Text(
                 person.fullName,
                 style: const TextStyle(
-                  color: _text,
+                  color: Color(0xFF263238),
                   fontSize: 19,
                   fontWeight: FontWeight.w800,
                 ),
@@ -223,7 +205,7 @@ class _PersonInfo extends StatelessWidget {
               Text(
                 'تاریخ تولد: ${person.birthDate}',
                 style: const TextStyle(
-                  color: _muted,
+                  color: Color(0xFF667085),
                   fontSize: 12,
                 ),
               ),
@@ -246,9 +228,6 @@ class _CategorySection extends StatelessWidget {
   final int count;
   final List<Widget> children;
 
-  static const _text = Color(0xFF263238);
-  static const _muted = Color(0xFF667085);
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -260,7 +239,7 @@ class _CategorySection extends StatelessWidget {
               child: Text(
                 title,
                 style: const TextStyle(
-                  color: _text,
+                  color: Color(0xFF263238),
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                 ),
@@ -269,7 +248,7 @@ class _CategorySection extends StatelessWidget {
             Text(
               '$count خدمت',
               style: const TextStyle(
-                color: _muted,
+                color: Color(0xFF667085),
                 fontSize: 11,
               ),
             ),
@@ -289,8 +268,6 @@ class _SectionTitle extends StatelessWidget {
 
   final String title;
 
-  static const _green = Color(0xFF527A18);
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -299,7 +276,7 @@ class _SectionTitle extends StatelessWidget {
           width: 4,
           height: 22,
           decoration: BoxDecoration(
-            color: _green,
+            color: const Color(0xFF527A18),
             borderRadius: BorderRadius.circular(4),
           ),
         ),
@@ -325,11 +302,6 @@ class _ServiceRow extends StatelessWidget {
 
   final Person person;
   final HealthService service;
-
-  static const _green = Color(0xFF527A18);
-  static const _lightGreen = Color(0xFFEAF3DF);
-  static const _text = Color(0xFF263238);
-  static const _muted = Color(0xFF667085);
 
   @override
   Widget build(BuildContext context) {
@@ -362,12 +334,12 @@ class _ServiceRow extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: _lightGreen,
+                  color: const Color(0xFFEAF3DF),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   _iconFor(service.category),
-                  color: _green,
+                  color: const Color(0xFF527A18),
                   size: 21,
                 ),
               ),
@@ -381,7 +353,7 @@ class _ServiceRow extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: _text,
+                        color: Color(0xFF263238),
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
                       ),
@@ -392,7 +364,9 @@ class _ServiceRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: schedule != null ? _green : _muted,
+                        color: schedule != null
+                            ? const Color(0xFF527A18)
+                            : const Color(0xFF667085),
                         fontSize: 11.5,
                         fontWeight: schedule != null
                             ? FontWeight.w600
@@ -475,11 +449,6 @@ class ServiceDetailPage extends StatelessWidget {
   final Person person;
   final HealthService service;
 
-  static const _background = Color(0xFFF7F9F6);
-  static const _green = Color(0xFF527A18);
-  static const _text = Color(0xFF263238);
-  static const _muted = Color(0xFF667085);
-
   @override
   Widget build(BuildContext context) {
     const engine = HealthServiceEngine();
@@ -493,10 +462,10 @@ class ServiceDetailPage extends StatelessWidget {
         service.requiresPregnancy;
 
     return Scaffold(
-      backgroundColor: _background,
+      backgroundColor: const Color(0xFFF7F9F6),
       appBar: AppBar(
-        backgroundColor: _background,
-        foregroundColor: _text,
+        backgroundColor: const Color(0xFFF7F9F6),
+        foregroundColor: const Color(0xFF263238),
         elevation: 0,
         title: const Text(
           'خدمت سلامت',
@@ -513,7 +482,7 @@ class ServiceDetailPage extends StatelessWidget {
             Text(
               person.fullName,
               style: const TextStyle(
-                color: _muted,
+                color: Color(0xFF667085),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
@@ -522,7 +491,7 @@ class ServiceDetailPage extends StatelessWidget {
             Text(
               service.title,
               style: const TextStyle(
-                color: _text,
+                color: Color(0xFF263238),
                 fontSize: 21,
                 fontWeight: FontWeight.w800,
                 height: 1.4,
@@ -547,7 +516,7 @@ class ServiceDetailPage extends StatelessWidget {
               const Text(
                 'درباره خدمت',
                 style: TextStyle(
-                  color: _text,
+                  color: Color(0xFF263238),
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                 ),
@@ -556,7 +525,7 @@ class ServiceDetailPage extends StatelessWidget {
               Text(
                 service.description,
                 style: const TextStyle(
-                  color: _muted,
+                  color: Color(0xFF667085),
                   fontSize: 13,
                   height: 1.8,
                 ),
@@ -595,11 +564,6 @@ class _DateCard extends StatelessWidget {
   final bool isVaccination;
   final bool isPregnancy;
 
-  static const _green = Color(0xFF527A18);
-  static const _lightGreen = Color(0xFFEAF3DF);
-  static const _text = Color(0xFF263238);
-  static const _muted = Color(0xFF667085);
-
   @override
   Widget build(BuildContext context) {
     final type = isVaccination
@@ -621,14 +585,14 @@ class _DateCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.event_available_outlined,
-                color: _green,
+                color: Color(0xFF527A18),
                 size: 21,
               ),
               SizedBox(width: 7),
               Text(
                 'موعد انجام',
                 style: TextStyle(
-                  color: _green,
+                  color: Color(0xFF527A18),
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                 ),
@@ -640,14 +604,14 @@ class _DateCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 13),
             decoration: BoxDecoration(
-              color: _lightGreen,
+              color: const Color(0xFFEAF3DF),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               schedule.date.toString(),
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: _text,
+                color: Color(0xFF263238),
                 fontSize: 22,
                 fontWeight: FontWeight.w900,
               ),
@@ -657,7 +621,7 @@ class _DateCard extends StatelessWidget {
           Text(
             schedule.title,
             style: const TextStyle(
-              color: _text,
+              color: Color(0xFF263238),
               fontSize: 14,
               fontWeight: FontWeight.w800,
             ),
@@ -666,7 +630,7 @@ class _DateCard extends StatelessWidget {
           Text(
             type,
             style: const TextStyle(
-              color: _muted,
+              color: Color(0xFF667085),
               fontSize: 12,
             ),
           ),
@@ -675,7 +639,7 @@ class _DateCard extends StatelessWidget {
             Text(
               schedule.description,
               style: const TextStyle(
-                color: _muted,
+                color: Color(0xFF667085),
                 fontSize: 12,
                 height: 1.7,
               ),
