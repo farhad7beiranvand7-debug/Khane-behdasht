@@ -17,29 +17,21 @@ class MemberFormPage extends StatefulWidget {
 }
 
 class _MemberFormPageState extends State<MemberFormPage> {
-  static const _green = Color(0xFFA6E22E);
   static const _darkGreen = Color(0xFF527A18);
   static const _background = Color(0xFFF9FBF7);
   static const _text = Color(0xFF344054);
   static const _muted = Color(0xFF667085);
 
   final _formKey = GlobalKey<FormState>();
-
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
-
   final FamilyMemberStore _store = const FamilyMemberStore();
 
   JalaliBirthDate? _birthDate;
   JalaliBirthDate? _lmpDate;
-
   PersonSex _sex = PersonSex.male;
   bool _isPregnant = false;
-
-  Set<HealthCondition> _conditions = {
-    HealthCondition.none,
-  };
-
+  Set<HealthCondition> _conditions = {HealthCondition.none};
   bool _saving = false;
 
   @override
@@ -51,16 +43,11 @@ class _MemberFormPageState extends State<MemberFormPage> {
     if (person != null) {
       _firstNameController.text = person.firstName;
       _lastNameController.text = person.lastName;
-
       _birthDate = person.birthDate;
       _lmpDate = person.lmpDate;
-
       _sex = person.sex;
       _isPregnant = person.isPregnant;
-
-      _conditions = Set<HealthCondition>.from(
-        person.conditions,
-      );
+      _conditions = Set<HealthCondition>.from(person.conditions);
     }
   }
 
@@ -103,9 +90,9 @@ class _MemberFormPageState extends State<MemberFormPage> {
   }) async {
     final now = DateTime.now();
 
-    var year = initialDate?.year ?? now.year - 621;
-    var month = initialDate?.month ?? now.month;
-    var day = initialDate?.day ?? now.day;
+    final year = initialDate?.year ?? now.year - 621;
+    final month = initialDate?.month ?? now.month;
+    final day = initialDate?.day ?? now.day;
 
     final controller = TextEditingController(
       text: _formatDateValues(year, month, day),
@@ -191,7 +178,6 @@ class _MemberFormPageState extends State<MemberFormPage> {
 
   JalaliBirthDate? _parseDate(String value) {
     final normalized = value.trim().replaceAll('-', '/');
-
     final parts = normalized.split('/');
 
     if (parts.length != 3) return null;
@@ -206,17 +192,9 @@ class _MemberFormPageState extends State<MemberFormPage> {
       return null;
     }
 
-    if (parsedYear < 1300 || parsedYear > 1500) {
-      return null;
-    }
-
-    if (parsedMonth < 1 || parsedMonth > 12) {
-      return null;
-    }
-
-    if (parsedDay < 1 || parsedDay > 31) {
-      return null;
-    }
+    if (parsedYear < 1300 || parsedYear > 1500) return null;
+    if (parsedMonth < 1 || parsedMonth > 12) return null;
+    if (parsedDay < 1 || parsedDay > 31) return null;
 
     return JalaliBirthDate(
       year: parsedYear,
@@ -244,9 +222,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     if (_birthDate == null) {
       _showMessage('تاریخ تولد را وارد کنید.');
@@ -322,9 +298,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
   ) {
     setState(() {
       if (condition == HealthCondition.none) {
-        _conditions = {
-          HealthCondition.none,
-        };
+        _conditions = {HealthCondition.none};
         return;
       }
 
@@ -371,13 +345,16 @@ class _MemberFormPageState extends State<MemberFormPage> {
               30,
             ),
             children: [
-              _Header(),
+              const _Header(),
+
               const SizedBox(height: 22),
 
               const _FieldLabel(
                 text: 'نام',
               ),
+
               const SizedBox(height: 8),
+
               _TextField(
                 controller: _firstNameController,
                 hint: 'نام فرد',
@@ -386,6 +363,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
                   if (value == null || value.trim().isEmpty) {
                     return 'نام را وارد کنید.';
                   }
+
                   return null;
                 },
               ),
@@ -395,7 +373,9 @@ class _MemberFormPageState extends State<MemberFormPage> {
               const _FieldLabel(
                 text: 'نام خانوادگی',
               ),
+
               const SizedBox(height: 8),
+
               _TextField(
                 controller: _lastNameController,
                 hint: 'نام خانوادگی',
@@ -404,6 +384,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
                   if (value == null || value.trim().isEmpty) {
                     return 'نام خانوادگی را وارد کنید.';
                   }
+
                   return null;
                 },
               ),
@@ -413,6 +394,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
               const _FieldLabel(
                 text: 'تاریخ تولد',
               ),
+
               const SizedBox(height: 8),
 
               _DateField(
@@ -428,6 +410,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
               const _FieldLabel(
                 text: 'جنسیت',
               ),
+
               const SizedBox(height: 8),
 
               Row(
@@ -467,14 +450,14 @@ class _MemberFormPageState extends State<MemberFormPage> {
               const _FieldLabel(
                 text: 'شرایط مهم سلامت',
               ),
+
               const SizedBox(height: 8),
 
               _ConditionChoice(
                 title: 'هیچ‌کدام',
                 icon: Icons.check_circle_outline_rounded,
-                selected: _conditions.contains(
-                  HealthCondition.none,
-                ),
+                selected:
+                    _conditions.contains(HealthCondition.none),
                 onTap: () {
                   _setCondition(
                     HealthCondition.none,
@@ -569,6 +552,7 @@ class _MemberFormPageState extends State<MemberFormPage> {
                   const _FieldLabel(
                     text: 'اولین روز آخرین قاعدگی',
                   ),
+
                   const SizedBox(height: 8),
 
                   _DateField(
@@ -789,8 +773,9 @@ class _DateField extends StatelessWidget {
                 style: TextStyle(
                   color: hasValue ? _text : _muted,
                   fontSize: 14,
-                  fontWeight:
-                      hasValue ? FontWeight.w600 : FontWeight.w500,
+                  fontWeight: hasValue
+                      ? FontWeight.w600
+                      : FontWeight.w500,
                 ),
               ),
             ),
@@ -856,8 +841,9 @@ class _GenderChoice extends StatelessWidget {
               title,
               style: TextStyle(
                 color: _text,
-                fontWeight:
-                    selected ? FontWeight.w800 : FontWeight.w500,
+                fontWeight: selected
+                    ? FontWeight.w800
+                    : FontWeight.w500,
               ),
             ),
           ],
@@ -939,3 +925,23 @@ class _ConditionChoice extends StatelessWidget {
     );
   }
 }
+
+2. "person_schedule_page.dart"
+
+برای این فایل فعلاً کل فایل را جایگزین نکن؛ چون سه رنگی که analyzer گزارش کرده صرفاً تعریف شده‌اند و استفاده نمی‌شوند.
+
+در ابتدای فایل، این سه خط را حذف کن:
+
+static const _green = Color(0xFFA6E22E);
+static const _darkGreen = Color(0xFF527A18);
+static const _muted = Color(0xFF667085);
+
+این کار هیچ تغییری در منطق صفحه ایجاد نمی‌کند.
+
+بعد Commit & Push کن.
+
+اگر Run بعدی "Flutter analyze" را با:
+
+No issues found!
+
+گذراند، دیگر به این فایل‌ها دست نمی‌زنیم و می‌رویم سراغ مرحله مهم بعدی: باز شدن یک خدمت به‌صورت مستقل، همراه با تاریخ واقعی خدمت، نوع واکسن/دوز یا نوع مراقبت بارداری.
