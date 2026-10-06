@@ -123,8 +123,6 @@ class ServiceDetailPage extends StatelessWidget {
   static const _background = Color(0xFFF9FBF7);
   static const _text = Color(0xFF344054);
   static const _muted = Color(0xFF667085);
-  static const _darkGreen = Color(0xFF527A18);
-  static const _green = Color(0xFFA6E22E);
 
   @override
   Widget build(BuildContext context) {
